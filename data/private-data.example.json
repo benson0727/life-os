@@ -1,0 +1,58 @@
+{
+  "_readme": "Copy this file to data/private-data.json and fill in real values. private-data.json is git-ignored and never pushed. All values below are FAKE examples.",
+  "overrides": {
+    "debt-reduction": {
+      "progress": 30,
+      "privateNotes": "Example: repay personal loan first, then extra mortgage principal.",
+      "metrics": [
+        { "label": "Total debt", "value": "NT$ 0,000,000", "progress": 30 },
+        { "label": "Monthly payment", "value": "NT$ 00,000" },
+        { "label": "Weighted interest", "value": "0.0 %" }
+      ]
+    },
+    "mortgage": {
+      "metrics": [
+        { "label": "Balance", "value": "NT$ 0,000,000" },
+        { "label": "Rate", "value": "0.0 %" }
+      ]
+    },
+    "personal-loan": {
+      "metrics": [
+        { "label": "Balance", "value": "NT$ 000,000", "progress": 45 },
+        { "label": "Rate", "value": "0.0 %" }
+      ]
+    },
+    "cash-flow": {
+      "metrics": [
+        { "label": "Monthly income", "value": "NT$ 000,000" },
+        { "label": "Monthly fixed cost", "value": "NT$ 00,000" },
+        { "label": "Monthly surplus", "value": "NT$ 00,000" }
+      ]
+    },
+    "emergency-fund": {
+      "metrics": [
+        { "label": "Target", "value": "6 months" },
+        { "label": "Current", "value": "0 months", "progress": 50 }
+      ]
+    },
+    "future": {
+      "privateNotes": "Example: target compensation level, preferred locations, timing constraints."
+    },
+    "inner": {
+      "privateNotes": "Example: personal practice notes. Only visible in Private Mode."
+    }
+  },
+  "nodes": [
+    { "id": "acct-example-a", "name": "Account A", "parent": "key-accounts", "category": "career", "description": "Example private node. Replace with a real account name.", "status": "active", "priority": "P1" },
+    { "id": "acct-example-b", "name": "Account B", "parent": "key-accounts", "category": "career", "description": "Example private node.", "status": "active", "priority": "P2" },
+    { "id": "person-example", "name": "Mentor (example)", "parent": "mentors", "category": "network", "description": "Example private person node. Keep contact details out of the map.", "related": ["blind-spots"] }
+  ],
+  "decision": {
+    "scores": {
+      "current": { "compensation": 3 }
+    },
+    "notes": {
+      "compensation": "Example: target annual package and current gap."
+    }
+  }
+}

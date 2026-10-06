@@ -1,0 +1,2481 @@
+{
+  "meta": {
+    "title": "BENSON LIFE OS",
+    "subtitle": "Hyperbolic Life Map",
+    "version": "1.0.0",
+    "owner": "Benson",
+    "updated": "2026-10-06"
+  },
+  "settings": {
+    "privateData": {
+      "autoLoad": false,
+      "url": "data/private-data.json",
+      "autoLoadHosts": [
+        "localhost",
+        "127.0.0.1"
+      ]
+    },
+    "statuses": [
+      {
+        "id": "idea",
+        "name": "Idea"
+      },
+      {
+        "id": "exploring",
+        "name": "Exploring"
+      },
+      {
+        "id": "planning",
+        "name": "Planning"
+      },
+      {
+        "id": "active",
+        "name": "Active"
+      },
+      {
+        "id": "waiting",
+        "name": "Waiting"
+      },
+      {
+        "id": "completed",
+        "name": "Completed"
+      },
+      {
+        "id": "paused",
+        "name": "Paused"
+      },
+      {
+        "id": "dropped",
+        "name": "Dropped"
+      }
+    ],
+    "priorities": [
+      {
+        "id": "P1",
+        "name": "P1 Critical"
+      },
+      {
+        "id": "P2",
+        "name": "P2 High"
+      },
+      {
+        "id": "P3",
+        "name": "P3 Medium"
+      },
+      {
+        "id": "P4",
+        "name": "P4 Low"
+      }
+    ],
+    "categories": [
+      {
+        "id": "self",
+        "name": "Self",
+        "color": "#C9A961"
+      },
+      {
+        "id": "career",
+        "name": "Career",
+        "color": "#4F7FD9"
+      },
+      {
+        "id": "future",
+        "name": "Future",
+        "color": "#7C8FB8"
+      },
+      {
+        "id": "finance",
+        "name": "Finance",
+        "color": "#B49A3E"
+      },
+      {
+        "id": "family",
+        "name": "Family",
+        "color": "#D2874E"
+      },
+      {
+        "id": "mindset",
+        "name": "Mindset",
+        "color": "#B4699E"
+      },
+      {
+        "id": "learning",
+        "name": "Learning",
+        "color": "#4FA47F"
+      },
+      {
+        "id": "research",
+        "name": "Research",
+        "color": "#2E9DB3"
+      },
+      {
+        "id": "health",
+        "name": "Health",
+        "color": "#C8625A"
+      },
+      {
+        "id": "network",
+        "name": "Network",
+        "color": "#9C8466"
+      },
+      {
+        "id": "growth",
+        "name": "Growth",
+        "color": "#8873D0"
+      },
+      {
+        "id": "life",
+        "name": "Life Mgmt",
+        "color": "#7D8A94"
+      },
+      {
+        "id": "inner",
+        "name": "Inner",
+        "color": "#8FA06E"
+      }
+    ],
+    "reflectionPrompts": {
+      "mindset": [
+        "What am I focusing on?",
+        "Why does this matter to me?",
+        "Is this driven by fear, ambition, responsibility, curiosity or meaning?",
+        "Is this aligned with my long-term direction?",
+        "What am I avoiding?",
+        "What assumptions am I making?",
+        "What is within my control?",
+        "What is outside my control?"
+      ],
+      "growth": [
+        "What changed in me after learning this?",
+        "Where did I apply it last month?",
+        "What would I do differently now?"
+      ],
+      "inner": [
+        "What did I notice today?",
+        "What intention is behind this action?"
+      ]
+    },
+    "balanceCategories": [
+      "career",
+      "finance",
+      "family",
+      "health",
+      "learning",
+      "mindset",
+      "future",
+      "growth"
+    ]
+  },
+  "nodes": [
+    {
+      "id": "self",
+      "name": "SELF",
+      "subtitle": "Benson",
+      "parent": null,
+      "category": "self",
+      "description": "The root of the whole system. Every branch is a part of life; none of them alone defines SELF.",
+      "why": "Keeps work, money, family, learning, health and inner life in one view so trade-offs stay visible.",
+      "status": "active",
+      "notes": "Hierarchy = structure. Focus = attention. Links = relationships. Timeline = direction. Status = reality. Progress = movement. Notes = reflection."
+    },
+    {
+      "id": "career",
+      "name": "Career & Work",
+      "parent": "self",
+      "category": "career",
+      "description": "Current professional role and the capabilities built through it.",
+      "why": "Main source of income, identity at work and the platform for future roles.",
+      "status": "active",
+      "priority": "P1",
+      "progress": 60,
+      "importance": 5,
+      "attention": 5,
+      "related": [
+        "finance",
+        "family-time",
+        "mindset",
+        "learning"
+      ]
+    },
+    {
+      "id": "danfoss",
+      "name": "Danfoss",
+      "parent": "career",
+      "category": "career",
+      "description": "Danfoss Climate Solutions, Data Center Solutions, Taiwan. Sales Manager.",
+      "why": "Current employer and the base for internal growth options.",
+      "status": "active",
+      "priority": "P1",
+      "tags": [
+        "employer"
+      ],
+      "related": [
+        "internal-career",
+        "digital-twin"
+      ]
+    },
+    {
+      "id": "data-center",
+      "name": "Data Center",
+      "parent": "career",
+      "category": "career",
+      "description": "AI and cloud data center thermal management market.",
+      "why": "Fast-growing market where domain depth creates long-term value.",
+      "status": "active",
+      "priority": "P1",
+      "tags": [
+        "market"
+      ],
+      "related": [
+        "dc-liquid-cooling",
+        "dc-expert"
+      ]
+    },
+    {
+      "id": "liquid-cooling",
+      "name": "Liquid Cooling",
+      "parent": "career",
+      "category": "career",
+      "description": "Liquid cooling solutions for high-density AI racks: cooling distribution, heat transfer, control and sensing.",
+      "why": "Core technical domain. Links sales work to research and Digital Twin work.",
+      "status": "active",
+      "priority": "P1",
+      "tags": [
+        "technical"
+      ],
+      "related": [
+        "dc-liquid-cooling",
+        "thermal-model",
+        "hydraulic-model"
+      ]
+    },
+    {
+      "id": "cdu",
+      "name": "CDU",
+      "parent": "liquid-cooling",
+      "category": "career",
+      "description": "Coolant Distribution Units: pumps, heat exchanger, controls, filtration.",
+      "why": "System-level product where component knowledge comes together.",
+      "status": "active",
+      "priority": "P2",
+      "tags": [
+        "product"
+      ],
+      "related": [
+        "equipment-model"
+      ]
+    },
+    {
+      "id": "valves",
+      "name": "Control & Solenoid Valves",
+      "parent": "liquid-cooling",
+      "category": "career",
+      "description": "Flow control, isolation and safety valves in secondary loops.",
+      "why": "Component content per rack and per CDU.",
+      "status": "active",
+      "priority": "P2",
+      "tags": [
+        "product"
+      ]
+    },
+    {
+      "id": "sensors",
+      "name": "Sensors",
+      "parent": "liquid-cooling",
+      "category": "career",
+      "description": "Pressure, temperature and flow sensing for monitoring and control.",
+      "why": "Sensors feed telemetry, which is the base of a live Digital Twin.",
+      "status": "active",
+      "priority": "P3",
+      "tags": [
+        "product"
+      ],
+      "related": [
+        "telemetry"
+      ]
+    },
+    {
+      "id": "heat-exchangers",
+      "name": "Plate Heat Exchangers",
+      "parent": "liquid-cooling",
+      "category": "career",
+      "description": "BPHE / MPHE for liquid-to-liquid heat transfer.",
+      "why": "Key thermal component in CDU design.",
+      "status": "active",
+      "priority": "P2",
+      "tags": [
+        "product"
+      ],
+      "related": [
+        "thermal-model"
+      ]
+    },
+    {
+      "id": "sales",
+      "name": "Sales",
+      "parent": "career",
+      "category": "career",
+      "description": "Revenue ownership, forecasting, pricing, quotation and order flow.",
+      "why": "Execution base that funds credibility for bigger roles.",
+      "status": "active",
+      "priority": "P1"
+    },
+    {
+      "id": "bizdev",
+      "name": "Business Development",
+      "parent": "career",
+      "category": "career",
+      "description": "New accounts, new applications and new market segments.",
+      "why": "Moves the role from execution to growth.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "vp-path",
+        "network-industry"
+      ]
+    },
+    {
+      "id": "tech-sales",
+      "name": "Technical Sales",
+      "parent": "career",
+      "category": "career",
+      "description": "Requirement → evidence → assessment → risk → next step. Bridge between customer engineering and product teams.",
+      "why": "Differentiator versus pure commercial sales.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "app-engineer-role",
+        "research-skills"
+      ]
+    },
+    {
+      "id": "customer-strategy",
+      "name": "Customer Strategy",
+      "parent": "career",
+      "category": "career",
+      "description": "Account plans, stakeholder maps and solution positioning.",
+      "why": "Decides where time and resources go.",
+      "status": "active",
+      "priority": "P2"
+    },
+    {
+      "id": "key-accounts",
+      "name": "Key Accounts",
+      "parent": "customer-strategy",
+      "category": "career",
+      "description": "Server ODM, thermal module and system integrator accounts. Named accounts live in private-data.json only.",
+      "why": "Concentrated revenue and the main design-in opportunities.",
+      "status": "active",
+      "priority": "P1",
+      "notes": "Public version keeps this generic on purpose. Add named accounts as private nodes."
+    },
+    {
+      "id": "ecosystem",
+      "name": "Data Center Ecosystem",
+      "parent": "customer-strategy",
+      "category": "career",
+      "description": "Hyperscalers, ODMs, thermal suppliers, integrators, standards bodies (OCP).",
+      "why": "Seeing the whole value chain shows where influence is decided.",
+      "status": "exploring",
+      "priority": "P3",
+      "related": [
+        "ocp-deschutes",
+        "network-industry"
+      ]
+    },
+    {
+      "id": "career-leadership",
+      "name": "Leadership at Work",
+      "parent": "career",
+      "category": "career",
+      "description": "Leading without full authority: cross-functional alignment, influence, ownership.",
+      "why": "Required step toward senior and regional roles.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "mindset-leadership",
+        "influence",
+        "vp-path"
+      ]
+    },
+    {
+      "id": "internal-career",
+      "name": "Internal Career",
+      "parent": "career",
+      "category": "career",
+      "description": "Growth options inside the current company: scope, title, regional or technical roles.",
+      "why": "Lowest-risk path to more scope if the opportunity is real.",
+      "status": "exploring",
+      "priority": "P2",
+      "related": [
+        "decisions",
+        "future"
+      ]
+    },
+    {
+      "id": "external-career",
+      "name": "External Career",
+      "parent": "career",
+      "category": "career",
+      "description": "Options outside the current company. Kept generic in the public version.",
+      "why": "Market reference point for value and scope.",
+      "status": "exploring",
+      "priority": "P3",
+      "related": [
+        "decisions",
+        "network-future"
+      ]
+    },
+    {
+      "id": "future",
+      "name": "Future & Vision",
+      "parent": "self",
+      "category": "future",
+      "description": "Where the next 3–5 years should lead: scope, role type, location, financial position.",
+      "why": "Direction turns daily effort into compound progress.",
+      "status": "planning",
+      "priority": "P1",
+      "progress": 35,
+      "importance": 5,
+      "attention": 4,
+      "related": [
+        "career",
+        "finance",
+        "learning",
+        "family-planning"
+      ]
+    },
+    {
+      "id": "y2027",
+      "name": "2027",
+      "parent": "future",
+      "category": "future",
+      "description": "Degree completion, stronger savings phase, first career-transition window.",
+      "why": "First milestone year where several branches converge.",
+      "status": "planning",
+      "priority": "P1",
+      "target": "2027",
+      "related": [
+        "uta",
+        "savings",
+        "debt-reduction"
+      ]
+    },
+    {
+      "id": "y2028",
+      "name": "2028",
+      "parent": "future",
+      "category": "future",
+      "description": "Senior / regional / international role development.",
+      "why": "Converts 2027 capabilities into scope.",
+      "status": "idea",
+      "priority": "P2",
+      "target": "2028"
+    },
+    {
+      "id": "y2030",
+      "name": "2030",
+      "parent": "future",
+      "category": "future",
+      "description": "Executive scope, research commercialization, financial flexibility.",
+      "why": "Long-range anchor. Reviewed yearly, not fixed.",
+      "status": "idea",
+      "priority": "P3",
+      "target": "2030",
+      "related": [
+        "fin-freedom",
+        "commercialization"
+      ]
+    },
+    {
+      "id": "overseas-career",
+      "name": "Overseas / International Role",
+      "parent": "future",
+      "category": "future",
+      "description": "Regional or international role with global scope.",
+      "why": "International exposure and strategic authority.",
+      "status": "exploring",
+      "priority": "P2",
+      "related": [
+        "english",
+        "family-planning",
+        "dt-career"
+      ]
+    },
+    {
+      "id": "tw-exec",
+      "name": "Taiwan Executive Role",
+      "parent": "future",
+      "category": "future",
+      "description": "Country or business-unit leadership in Taiwan.",
+      "why": "Senior scope without relocation.",
+      "status": "idea",
+      "priority": "P2",
+      "related": [
+        "career-leadership",
+        "vp-path"
+      ]
+    },
+    {
+      "id": "vp-path",
+      "name": "VP Path",
+      "parent": "future",
+      "category": "future",
+      "description": "Capabilities needed: P&L view, team leadership, strategy, executive presence.",
+      "why": "Long-term leadership track.",
+      "status": "idea",
+      "priority": "P3",
+      "related": [
+        "strategic-thinking",
+        "emba"
+      ]
+    },
+    {
+      "id": "dt-career",
+      "name": "Digital Twin / Software Career",
+      "parent": "future",
+      "category": "future",
+      "description": "Roles combining data center domain knowledge with Digital Twin and software skills.",
+      "why": "Rare combination: domain + software + customer-facing.",
+      "status": "exploring",
+      "priority": "P1",
+      "related": [
+        "digital-twin",
+        "programming",
+        "overseas-career",
+        "github"
+      ]
+    },
+    {
+      "id": "dc-expert",
+      "name": "Data Center Expert",
+      "parent": "future",
+      "category": "future",
+      "description": "Recognized expert in AI data center thermal management.",
+      "why": "Expertise compounds across any of the role paths.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "journal",
+        "patent",
+        "data-center"
+      ]
+    },
+    {
+      "id": "legacy",
+      "name": "Personal Legacy",
+      "parent": "future",
+      "category": "future",
+      "description": "What should remain: work, knowledge shared, family, character.",
+      "why": "Keeps short-term ambition in proportion.",
+      "status": "idea",
+      "priority": "P3",
+      "related": [
+        "meaning",
+        "service"
+      ]
+    },
+    {
+      "id": "finance",
+      "name": "Finance",
+      "parent": "self",
+      "category": "finance",
+      "description": "High-level personal finance. Exact figures only in private-data.json.",
+      "why": "Financial stability supports family security and career freedom.",
+      "status": "active",
+      "priority": "P1",
+      "progress": 40,
+      "importance": 5,
+      "attention": 4,
+      "related": [
+        "career",
+        "financial-security",
+        "fin-freedom"
+      ],
+      "notes": "Phase 1: debt reduction. Phase 2 (from ~2027): increase savings and asset accumulation. Phase 3: more financial flexibility, less dependency on salary."
+    },
+    {
+      "id": "income",
+      "name": "Income",
+      "parent": "finance",
+      "category": "finance",
+      "description": "All income sources.",
+      "why": "Defines the capacity for every other finance goal.",
+      "status": "active",
+      "priority": "P2"
+    },
+    {
+      "id": "salary",
+      "name": "Salary",
+      "parent": "income",
+      "category": "finance",
+      "description": "Base compensation.",
+      "why": "Stable base for fixed obligations.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "career"
+      ]
+    },
+    {
+      "id": "bonus",
+      "name": "Bonus",
+      "parent": "income",
+      "category": "finance",
+      "description": "Variable compensation.",
+      "why": "Use for debt reduction and savings, not lifestyle creep.",
+      "status": "active",
+      "priority": "P3"
+    },
+    {
+      "id": "debt-reduction",
+      "name": "Debt Reduction",
+      "parent": "finance",
+      "category": "finance",
+      "description": "Phase 1 of the financial plan.",
+      "why": "Lower debt = lower fixed cost = more freedom of choice.",
+      "status": "active",
+      "priority": "P1",
+      "target": "2027",
+      "related": [
+        "cash-flow",
+        "y2027"
+      ],
+      "nextAction": "Review repayment order and monthly plan."
+    },
+    {
+      "id": "mortgage",
+      "name": "Mortgage",
+      "parent": "debt-reduction",
+      "category": "finance",
+      "description": "Home loan. Balance and rate in private data only.",
+      "why": "Largest long-term obligation.",
+      "status": "active",
+      "priority": "P2"
+    },
+    {
+      "id": "personal-loan",
+      "name": "Personal Loan",
+      "parent": "debt-reduction",
+      "category": "finance",
+      "description": "Balance and rate in private data only.",
+      "why": "Typically higher rate. First repayment candidate.",
+      "status": "active",
+      "priority": "P1"
+    },
+    {
+      "id": "savings",
+      "name": "Savings",
+      "parent": "finance",
+      "category": "finance",
+      "description": "Phase 2 focus from ~2027.",
+      "why": "Builds options and resilience.",
+      "status": "planning",
+      "priority": "P2",
+      "target": "2027",
+      "related": [
+        "y2027"
+      ]
+    },
+    {
+      "id": "emergency-fund",
+      "name": "Emergency Fund",
+      "parent": "savings",
+      "category": "finance",
+      "description": "Months of fixed expenses held in cash.",
+      "why": "Protects the family from income shocks.",
+      "status": "active",
+      "priority": "P1",
+      "related": [
+        "financial-security"
+      ]
+    },
+    {
+      "id": "investment",
+      "name": "Investment & Assets",
+      "parent": "finance",
+      "category": "finance",
+      "description": "Long-term assets after debt and emergency fund are in place.",
+      "why": "Reduces dependency on salary over time.",
+      "status": "planning",
+      "priority": "P3"
+    },
+    {
+      "id": "retirement",
+      "name": "Retirement",
+      "parent": "finance",
+      "category": "finance",
+      "description": "Long-horizon retirement planning.",
+      "why": "Small early decisions compound.",
+      "status": "idea",
+      "priority": "P3"
+    },
+    {
+      "id": "insurance",
+      "name": "Insurance",
+      "parent": "finance",
+      "category": "finance",
+      "description": "Protection for health, life and assets.",
+      "why": "Downside protection for the family.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "family"
+      ]
+    },
+    {
+      "id": "cash-flow",
+      "name": "Cash Flow",
+      "parent": "finance",
+      "category": "finance",
+      "description": "Monthly in / out and surplus.",
+      "why": "The single best leading indicator of financial health.",
+      "status": "active",
+      "priority": "P1",
+      "nextAction": "Track monthly surplus."
+    },
+    {
+      "id": "fin-freedom",
+      "name": "Financial Freedom",
+      "parent": "finance",
+      "category": "finance",
+      "description": "Phase 3: income options beyond salary.",
+      "why": "Freedom to choose roles on meaning and growth, not only pay.",
+      "status": "idea",
+      "priority": "P3",
+      "target": "2030",
+      "related": [
+        "future",
+        "y2030"
+      ]
+    },
+    {
+      "id": "family",
+      "name": "Family",
+      "parent": "self",
+      "category": "family",
+      "description": "Career success is not evaluated independently from family quality.",
+      "why": "The reason behind much of the effort, and a constraint to respect.",
+      "status": "active",
+      "priority": "P1",
+      "progress": 55,
+      "importance": 5,
+      "attention": 3,
+      "related": [
+        "finance",
+        "health",
+        "future",
+        "mindset"
+      ]
+    },
+    {
+      "id": "partner",
+      "name": "Partner",
+      "parent": "family",
+      "category": "family",
+      "description": "Relationship with spouse.",
+      "why": "Main partner in life decisions.",
+      "status": "active",
+      "priority": "P1",
+      "related": [
+        "communication-family",
+        "decisions"
+      ]
+    },
+    {
+      "id": "children",
+      "name": "Children",
+      "parent": "family",
+      "category": "family",
+      "description": "Children's growth, education and time together. No personal details in public data.",
+      "why": "Future planning has to include their timeline.",
+      "status": "active",
+      "priority": "P1",
+      "related": [
+        "future",
+        "family-planning"
+      ]
+    },
+    {
+      "id": "parents",
+      "name": "Parents",
+      "parent": "family",
+      "category": "family",
+      "description": "Care and time for parents.",
+      "why": "Time-limited. Easy to postpone, hard to recover.",
+      "status": "active",
+      "priority": "P2"
+    },
+    {
+      "id": "family-time",
+      "name": "Family Time",
+      "parent": "family",
+      "category": "family",
+      "description": "Protected, regular time with family.",
+      "why": "The first thing work erodes.",
+      "status": "active",
+      "priority": "P1",
+      "related": [
+        "career",
+        "calendar"
+      ],
+      "nextAction": "Block family time in the calendar first."
+    },
+    {
+      "id": "responsibility",
+      "name": "Responsibility",
+      "parent": "family",
+      "category": "family",
+      "description": "Roles and duties inside the family.",
+      "why": "Shared clarity reduces friction.",
+      "status": "active",
+      "priority": "P2"
+    },
+    {
+      "id": "financial-security",
+      "name": "Financial Security",
+      "parent": "family",
+      "category": "family",
+      "description": "Family protected against income and health shocks.",
+      "why": "Link between finance and family.",
+      "status": "active",
+      "priority": "P1",
+      "related": [
+        "emergency-fund",
+        "insurance",
+        "finance"
+      ]
+    },
+    {
+      "id": "travel",
+      "name": "Family Travel",
+      "parent": "family",
+      "category": "family",
+      "description": "Trips and shared experiences.",
+      "why": "Shared memories; also recovery.",
+      "status": "planning",
+      "priority": "P3",
+      "related": [
+        "recovery"
+      ]
+    },
+    {
+      "id": "communication-family",
+      "name": "Family Communication",
+      "parent": "family",
+      "category": "family",
+      "description": "How decisions and concerns are discussed at home.",
+      "why": "Big career moves need family alignment first.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "mindset-communication"
+      ]
+    },
+    {
+      "id": "family-planning",
+      "name": "Long-Term Family Planning",
+      "parent": "family",
+      "category": "family",
+      "description": "Housing, schooling, location and care over the next 5–10 years.",
+      "why": "Any overseas or major role change is a family decision.",
+      "status": "planning",
+      "priority": "P2",
+      "related": [
+        "overseas-career",
+        "future",
+        "children"
+      ]
+    },
+    {
+      "id": "mindset",
+      "name": "Psychology & Mindset",
+      "parent": "self",
+      "category": "mindset",
+      "description": "Self-reflection, decision quality, leadership and emotional awareness. Not a clinical tool.",
+      "why": "Decision quality depends on the state of the person making the decision.",
+      "status": "active",
+      "priority": "P1",
+      "progress": 45,
+      "importance": 5,
+      "attention": 3,
+      "related": [
+        "career",
+        "family",
+        "decisions",
+        "health"
+      ]
+    },
+    {
+      "id": "self-awareness",
+      "name": "Self Awareness",
+      "parent": "mindset",
+      "category": "mindset",
+      "description": "Seeing own patterns, triggers and motives clearly.",
+      "why": "Base for every other mindset node.",
+      "status": "active",
+      "priority": "P1",
+      "related": [
+        "growth",
+        "reflection"
+      ]
+    },
+    {
+      "id": "strengths",
+      "name": "Strengths",
+      "parent": "mindset",
+      "category": "mindset",
+      "description": "Technical sales depth, customer trust, cross-domain learning, execution.",
+      "why": "Build roles around strengths.",
+      "status": "active",
+      "priority": "P2",
+      "prompts": [
+        "Where did my strengths create results this month?",
+        "Which strength am I over-using?"
+      ]
+    },
+    {
+      "id": "weaknesses",
+      "name": "Weaknesses",
+      "parent": "mindset",
+      "category": "mindset",
+      "description": "Areas that limit results today.",
+      "why": "Know which ones matter for the next role.",
+      "status": "exploring",
+      "priority": "P2",
+      "prompts": [
+        "Which weakness actually costs me results?",
+        "Is it a skill gap or a habit?"
+      ]
+    },
+    {
+      "id": "blind-spots",
+      "name": "Blind Spots",
+      "parent": "mindset",
+      "category": "mindset",
+      "description": "What others see that I do not.",
+      "why": "Usually the highest-value feedback.",
+      "status": "exploring",
+      "priority": "P2",
+      "prompts": [
+        "What feedback did I dismiss recently?",
+        "Who could tell me the truth about this?"
+      ]
+    },
+    {
+      "id": "emotion",
+      "name": "Emotion",
+      "parent": "mindset",
+      "category": "mindset",
+      "description": "Noticing emotional state before decisions.",
+      "why": "Emotion is data, not a decision.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "stress"
+      ]
+    },
+    {
+      "id": "confidence",
+      "name": "Confidence",
+      "parent": "mindset",
+      "category": "mindset",
+      "description": "Calibrated self-belief — neither over- nor under-confident.",
+      "why": "Calibration beats encouragement.",
+      "status": "active",
+      "priority": "P3"
+    },
+    {
+      "id": "ego",
+      "name": "Ego",
+      "parent": "mindset",
+      "category": "mindset",
+      "description": "Need to be right, recognized or in control.",
+      "why": "Ego distorts judgment and negotiation.",
+      "status": "active",
+      "priority": "P3",
+      "related": [
+        "humility"
+      ]
+    },
+    {
+      "id": "decision-making",
+      "name": "Decision Making",
+      "parent": "mindset",
+      "category": "mindset",
+      "description": "Separating fact, inference, interpretation and recommendation.",
+      "why": "Quality of life = quality of decisions over time.",
+      "status": "active",
+      "priority": "P1",
+      "related": [
+        "decisions",
+        "judgment"
+      ]
+    },
+    {
+      "id": "power",
+      "name": "Power",
+      "parent": "mindset",
+      "category": "mindset",
+      "description": "Understanding authority, influence and organizational dynamics.",
+      "why": "Needed for senior roles; easy to misuse.",
+      "status": "exploring",
+      "priority": "P3",
+      "related": [
+        "influence"
+      ]
+    },
+    {
+      "id": "mindset-leadership",
+      "name": "Leadership Mindset",
+      "parent": "mindset",
+      "category": "mindset",
+      "description": "Ownership, clarity and care for the team.",
+      "why": "Leadership starts inside before it shows outside.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "career-leadership"
+      ]
+    },
+    {
+      "id": "mindset-communication",
+      "name": "Communication",
+      "parent": "mindset",
+      "category": "mindset",
+      "description": "Clear, short, honest communication.",
+      "why": "Credibility is built in every message.",
+      "status": "active",
+      "priority": "P2"
+    },
+    {
+      "id": "discipline",
+      "name": "Discipline",
+      "parent": "mindset",
+      "category": "mindset",
+      "description": "Doing the important thing when motivation is low.",
+      "why": "Turns plans into progress.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "exercise",
+        "review-system"
+      ]
+    },
+    {
+      "id": "focus",
+      "name": "Focus",
+      "parent": "mindset",
+      "category": "mindset",
+      "description": "Where attention actually goes, versus where it should go.",
+      "why": "Attention is the scarcest resource.",
+      "status": "active",
+      "priority": "P1"
+    },
+    {
+      "id": "stress",
+      "name": "Stress",
+      "parent": "mindset",
+      "category": "mindset",
+      "description": "Load, pressure and recovery balance.",
+      "why": "Chronic stress lowers judgment and health.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "sleep",
+        "recovery"
+      ]
+    },
+    {
+      "id": "resilience",
+      "name": "Resilience",
+      "parent": "mindset",
+      "category": "mindset",
+      "description": "Recovering from setbacks without losing direction.",
+      "why": "Long careers are built on recovery speed.",
+      "status": "active",
+      "priority": "P3"
+    },
+    {
+      "id": "reflection",
+      "name": "Reflection",
+      "parent": "mindset",
+      "category": "mindset",
+      "description": "Regular review of actions, motives and results.",
+      "why": "Experience only becomes learning after reflection.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "review-system",
+        "inner-reflection"
+      ]
+    },
+    {
+      "id": "meaning",
+      "name": "Meaning",
+      "parent": "mindset",
+      "category": "mindset",
+      "description": "Why the effort matters.",
+      "why": "Meaning sustains effort when rewards are delayed.",
+      "status": "exploring",
+      "priority": "P2",
+      "related": [
+        "legacy"
+      ]
+    },
+    {
+      "id": "values",
+      "name": "Values",
+      "parent": "mindset",
+      "category": "mindset",
+      "description": "Principles used to decide when options conflict.",
+      "why": "Values settle trade-offs that data cannot.",
+      "status": "active",
+      "priority": "P2"
+    },
+    {
+      "id": "identity",
+      "name": "Identity",
+      "parent": "mindset",
+      "category": "mindset",
+      "description": "Who I am beyond role and title.",
+      "why": "Prevents a job change from becoming an identity crisis.",
+      "status": "exploring",
+      "priority": "P3"
+    },
+    {
+      "id": "learning",
+      "name": "Learning & Education",
+      "parent": "self",
+      "category": "learning",
+      "description": "Learning connected to real career outcomes, not only degrees.",
+      "why": "Learning → capability → opportunity.",
+      "status": "active",
+      "priority": "P1",
+      "progress": 65,
+      "importance": 4,
+      "attention": 4,
+      "related": [
+        "career",
+        "digital-twin",
+        "mindset-leadership"
+      ],
+      "notes": "Example chain: Learning → Digital Twin → software capability → internal opportunity → international opportunity."
+    },
+    {
+      "id": "ntut",
+      "name": "NTUT",
+      "parent": "learning",
+      "category": "learning",
+      "description": "National Taipei University of Technology — AI dual master's program with UTA.",
+      "why": "Technical and research foundation for the thesis.",
+      "status": "active",
+      "priority": "P1",
+      "related": [
+        "thesis"
+      ]
+    },
+    {
+      "id": "uta",
+      "name": "UTA",
+      "parent": "learning",
+      "category": "learning",
+      "description": "University of Texas at Arlington — dual program partner.",
+      "why": "International credential and network.",
+      "status": "active",
+      "priority": "P1",
+      "target": "2027",
+      "related": [
+        "overseas-career"
+      ]
+    },
+    {
+      "id": "emba",
+      "name": "EMBA",
+      "parent": "uta",
+      "category": "learning",
+      "description": "Executive MBA coursework.",
+      "why": "Business frame for senior and executive roles.",
+      "status": "active",
+      "priority": "P1",
+      "target": "2027",
+      "related": [
+        "vp-path",
+        "tw-exec"
+      ]
+    },
+    {
+      "id": "strategic-mgmt",
+      "name": "Strategic Management",
+      "parent": "emba",
+      "category": "learning",
+      "description": "Competitive strategy, positioning, resource allocation.",
+      "why": "Language of executive roles.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "strategic-thinking"
+      ]
+    },
+    {
+      "id": "intl-marketing",
+      "name": "International Marketing",
+      "parent": "emba",
+      "category": "learning",
+      "description": "Market entry, segmentation, global positioning.",
+      "why": "Directly useful for regional BD.",
+      "status": "active",
+      "priority": "P3",
+      "related": [
+        "bizdev"
+      ]
+    },
+    {
+      "id": "economics",
+      "name": "Economics",
+      "parent": "emba",
+      "category": "learning",
+      "description": "Macro and managerial economics.",
+      "why": "Context for pricing, investment and market cycles.",
+      "status": "active",
+      "priority": "P3"
+    },
+    {
+      "id": "english",
+      "name": "English",
+      "parent": "learning",
+      "category": "learning",
+      "description": "Professional English for writing, meetings and presentations.",
+      "why": "Required for international roles.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "overseas-career"
+      ]
+    },
+    {
+      "id": "ai",
+      "name": "AI",
+      "parent": "learning",
+      "category": "learning",
+      "description": "AI / deep learning fundamentals and practical AI tools.",
+      "why": "Multiplier for research, software and daily work.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "ai-tools",
+        "digital-twin"
+      ]
+    },
+    {
+      "id": "programming",
+      "name": "Programming",
+      "parent": "learning",
+      "category": "learning",
+      "description": "Software skills for building tools and Digital Twin applications.",
+      "why": "Turns ideas into working systems.",
+      "status": "active",
+      "priority": "P1",
+      "related": [
+        "dt-software",
+        "dt-career"
+      ]
+    },
+    {
+      "id": "javascript",
+      "name": "JavaScript",
+      "parent": "programming",
+      "category": "learning",
+      "description": "Browser applications, visualization (Three.js, D3, Chart.js).",
+      "why": "Front-end of the Digital Twin.",
+      "status": "active",
+      "priority": "P2"
+    },
+    {
+      "id": "python",
+      "name": "Python",
+      "parent": "programming",
+      "category": "learning",
+      "description": "Data processing, gateways (e.g. Modbus), analysis.",
+      "why": "Back-end, data and integration layer.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "telemetry"
+      ]
+    },
+    {
+      "id": "dt-skills",
+      "name": "Modeling & Simulation",
+      "parent": "learning",
+      "category": "learning",
+      "description": "System modeling tools for physics-based Digital Twin.",
+      "why": "Credibility of the twin depends on model quality.",
+      "status": "exploring",
+      "priority": "P2",
+      "related": [
+        "thermal-model",
+        "hydraulic-model"
+      ]
+    },
+    {
+      "id": "modelica",
+      "name": "Modelica",
+      "parent": "dt-skills",
+      "category": "learning",
+      "description": "Equation-based modeling language for physical systems.",
+      "why": "Open standard for thermal-hydraulic models.",
+      "status": "exploring",
+      "priority": "P3"
+    },
+    {
+      "id": "dymola",
+      "name": "Dymola",
+      "parent": "dt-skills",
+      "category": "learning",
+      "description": "Modelica simulation environment.",
+      "why": "Industry tool for system simulation.",
+      "status": "idea",
+      "priority": "P4"
+    },
+    {
+      "id": "matlab",
+      "name": "MATLAB / Simulink",
+      "parent": "dt-skills",
+      "category": "learning",
+      "description": "Control design and simulation.",
+      "why": "Control logic validation.",
+      "status": "idea",
+      "priority": "P4",
+      "related": [
+        "control"
+      ]
+    },
+    {
+      "id": "research-skills",
+      "name": "Research Skills",
+      "parent": "learning",
+      "category": "learning",
+      "description": "Literature review, method, validation, academic writing.",
+      "why": "Needed for thesis, journal and patent work.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "thesis",
+        "journal"
+      ]
+    },
+    {
+      "id": "research",
+      "name": "Research & Digital Twin",
+      "parent": "self",
+      "category": "research",
+      "description": "AI server data center liquid cooling and Digital Twin development.",
+      "why": "Connects research, software, the current industry role and future career options.",
+      "status": "active",
+      "priority": "P1",
+      "progress": 70,
+      "importance": 5,
+      "attention": 5,
+      "related": [
+        "career",
+        "learning",
+        "future"
+      ]
+    },
+    {
+      "id": "digital-twin",
+      "name": "Digital Twin",
+      "parent": "research",
+      "category": "research",
+      "description": "Digital Twin for liquid-cooled AI data centers: live telemetry, models, alarms and control.",
+      "why": "Connects research, software development and future career opportunities.",
+      "status": "active",
+      "priority": "P1",
+      "progress": 65,
+      "target": "2027",
+      "tags": [
+        "data-center",
+        "software",
+        "research"
+      ],
+      "related": [
+        "career",
+        "thesis",
+        "journal",
+        "patent",
+        "danfoss",
+        "overseas-career",
+        "dt-career",
+        "programming"
+      ],
+      "nextAction": "Continue validation and strengthen software architecture."
+    },
+    {
+      "id": "dc-liquid-cooling",
+      "name": "Data Center Liquid Cooling",
+      "parent": "digital-twin",
+      "category": "research",
+      "description": "Physical system being twinned: racks, CDU, secondary loop, facility water.",
+      "why": "Domain knowledge is the twin's moat.",
+      "status": "active",
+      "priority": "P1",
+      "related": [
+        "liquid-cooling"
+      ]
+    },
+    {
+      "id": "ocp-deschutes",
+      "name": "OCP Deschutes",
+      "parent": "digital-twin",
+      "category": "research",
+      "description": "OCP Project Deschutes CDU specification as the reference architecture.",
+      "why": "Open standard gives a public, citable basis for research.",
+      "status": "active",
+      "priority": "P1",
+      "related": [
+        "thesis",
+        "ecosystem"
+      ]
+    },
+    {
+      "id": "live-dt",
+      "name": "Live Digital Twin",
+      "parent": "digital-twin",
+      "category": "research",
+      "description": "Web-based live twin: data in, state out, operator view.",
+      "why": "Turns a model into a usable tool.",
+      "status": "active",
+      "priority": "P1",
+      "related": [
+        "dt-software"
+      ]
+    },
+    {
+      "id": "telemetry",
+      "name": "Telemetry",
+      "parent": "live-dt",
+      "category": "research",
+      "description": "Sensor data ingestion (e.g. Modbus gateway).",
+      "why": "No data, no twin.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "sensors",
+        "python"
+      ]
+    },
+    {
+      "id": "trends",
+      "name": "Trends",
+      "parent": "live-dt",
+      "category": "research",
+      "description": "Historical trend views and KPIs.",
+      "why": "Shows drift before it becomes a failure.",
+      "status": "active",
+      "priority": "P3"
+    },
+    {
+      "id": "alarm",
+      "name": "Alarm",
+      "parent": "live-dt",
+      "category": "research",
+      "description": "Threshold and logic-based alarms.",
+      "why": "Operational value for users.",
+      "status": "active",
+      "priority": "P3"
+    },
+    {
+      "id": "control",
+      "name": "Control",
+      "parent": "live-dt",
+      "category": "research",
+      "description": "Control logic simulation and what-if.",
+      "why": "Moves from monitoring to optimization.",
+      "status": "exploring",
+      "priority": "P3",
+      "related": [
+        "matlab"
+      ]
+    },
+    {
+      "id": "thermal-model",
+      "name": "Thermal Model",
+      "parent": "digital-twin",
+      "category": "research",
+      "description": "Heat load, heat exchanger and temperature behavior.",
+      "why": "Core physics of the twin.",
+      "status": "active",
+      "priority": "P1",
+      "related": [
+        "heat-exchangers",
+        "dt-skills"
+      ]
+    },
+    {
+      "id": "hydraulic-model",
+      "name": "Hydraulic Model",
+      "parent": "digital-twin",
+      "category": "research",
+      "description": "Flow, pressure drop, pump curves.",
+      "why": "Second core physics layer.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "dt-skills"
+      ]
+    },
+    {
+      "id": "equipment-model",
+      "name": "Equipment Model",
+      "parent": "digital-twin",
+      "category": "research",
+      "description": "Component models: CDU, pumps, valves, sensors.",
+      "why": "Links product knowledge to the twin.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "cdu"
+      ]
+    },
+    {
+      "id": "validation",
+      "name": "Validation",
+      "parent": "digital-twin",
+      "category": "research",
+      "description": "Comparing model results with reference or measured data.",
+      "why": "Credibility of every claim depends on it.",
+      "status": "active",
+      "priority": "P1",
+      "nextAction": "Define validation cases and acceptance error band."
+    },
+    {
+      "id": "dt-software",
+      "name": "Software Development",
+      "parent": "digital-twin",
+      "category": "research",
+      "description": "Architecture, code quality, versioning, deployment.",
+      "why": "Portfolio quality signals engineering maturity.",
+      "status": "active",
+      "priority": "P1",
+      "related": [
+        "programming",
+        "github"
+      ]
+    },
+    {
+      "id": "thesis",
+      "name": "Thesis",
+      "parent": "research",
+      "category": "research",
+      "description": "Master's thesis on a Digital Twin for OCP Deschutes-compliant liquid-cooled AI data centers.",
+      "why": "Academic proof of the work.",
+      "status": "active",
+      "priority": "P1",
+      "progress": 85,
+      "target": "2026",
+      "related": [
+        "ntut",
+        "ocp-deschutes",
+        "journal"
+      ]
+    },
+    {
+      "id": "journal",
+      "name": "Journal Paper",
+      "parent": "research",
+      "category": "research",
+      "description": "Publication derived from the thesis.",
+      "why": "External validation and visibility.",
+      "status": "planning",
+      "priority": "P2",
+      "target": "2027",
+      "related": [
+        "dc-expert"
+      ]
+    },
+    {
+      "id": "patent",
+      "name": "Patent",
+      "parent": "research",
+      "category": "research",
+      "description": "Possible patent filing on Digital Twin methods. Details private.",
+      "why": "Protects and signals original work.",
+      "status": "exploring",
+      "priority": "P2",
+      "related": [
+        "commercialization"
+      ]
+    },
+    {
+      "id": "commercialization",
+      "name": "Commercialization",
+      "parent": "research",
+      "category": "research",
+      "description": "Consulting, SaaS or licensing paths for the research.",
+      "why": "Long-term option for income beyond salary.",
+      "status": "idea",
+      "priority": "P3",
+      "target": "2028+",
+      "related": [
+        "fin-freedom",
+        "y2030"
+      ]
+    },
+    {
+      "id": "health",
+      "name": "Health & Energy",
+      "parent": "self",
+      "category": "health",
+      "description": "Generic health management only. No medical data in the public version.",
+      "why": "Energy drives work performance, emotion and family life.",
+      "status": "active",
+      "priority": "P1",
+      "progress": 50,
+      "importance": 5,
+      "attention": 3,
+      "related": [
+        "career",
+        "family",
+        "mindset"
+      ]
+    },
+    {
+      "id": "sleep",
+      "name": "Sleep",
+      "parent": "health",
+      "category": "health",
+      "description": "Sleep duration and regularity.",
+      "why": "The base of energy and judgment.",
+      "status": "active",
+      "priority": "P1",
+      "related": [
+        "stress"
+      ]
+    },
+    {
+      "id": "exercise",
+      "name": "Exercise",
+      "parent": "health",
+      "category": "health",
+      "description": "Regular training, including running.",
+      "why": "Energy, mood and long-term health.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "discipline"
+      ]
+    },
+    {
+      "id": "nutrition",
+      "name": "Nutrition",
+      "parent": "health",
+      "category": "health",
+      "description": "Eating patterns and quality.",
+      "why": "Steady energy through long days.",
+      "status": "active",
+      "priority": "P3"
+    },
+    {
+      "id": "energy",
+      "name": "Energy",
+      "parent": "health",
+      "category": "health",
+      "description": "Daily energy level and where it goes.",
+      "why": "Energy, not time, is the real limit.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "focus"
+      ]
+    },
+    {
+      "id": "health-stress",
+      "name": "Stress Load",
+      "parent": "health",
+      "category": "health",
+      "description": "Physical side of stress.",
+      "why": "Links mind and body.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "stress"
+      ]
+    },
+    {
+      "id": "recovery",
+      "name": "Recovery",
+      "parent": "health",
+      "category": "health",
+      "description": "Rest, breaks, holidays.",
+      "why": "Performance needs recovery cycles.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "travel"
+      ]
+    },
+    {
+      "id": "checkups",
+      "name": "Checkups",
+      "parent": "health",
+      "category": "health",
+      "description": "Regular health checks. Results stay private.",
+      "why": "Early detection is cheap.",
+      "status": "planning",
+      "priority": "P2"
+    },
+    {
+      "id": "weight",
+      "name": "Weight",
+      "parent": "health",
+      "category": "health",
+      "description": "Body composition trend.",
+      "why": "Long-term health indicator.",
+      "status": "active",
+      "priority": "P3"
+    },
+    {
+      "id": "long-term-health",
+      "name": "Long-Term Health",
+      "parent": "health",
+      "category": "health",
+      "description": "Health at 60 and 70.",
+      "why": "Long-term quality of life and time with family.",
+      "status": "planning",
+      "priority": "P2",
+      "related": [
+        "family",
+        "legacy"
+      ]
+    },
+    {
+      "id": "network",
+      "name": "Relationships & Network",
+      "parent": "self",
+      "category": "network",
+      "description": "Roles, not personal contact data, in the public version.",
+      "why": "Opportunities usually arrive through people.",
+      "status": "active",
+      "priority": "P2",
+      "progress": 45,
+      "importance": 4,
+      "attention": 3,
+      "related": [
+        "career",
+        "future"
+      ],
+      "notes": "Example roles: Regional Sales Director, Product Manager, Application Engineer, Customer RD, Customer SCM, Professor, Industry Partner."
+    },
+    {
+      "id": "network-internal",
+      "name": "Internal Colleagues",
+      "parent": "network",
+      "category": "network",
+      "description": "Product management, application engineering, sales and operations.",
+      "why": "Execution depends on internal alignment.",
+      "status": "active",
+      "priority": "P2"
+    },
+    {
+      "id": "app-engineer-role",
+      "name": "Application Engineer",
+      "parent": "network-internal",
+      "category": "network",
+      "description": "Role: technical confirmation and design support.",
+      "why": "Protects credibility on technical claims.",
+      "status": "active",
+      "priority": "P2"
+    },
+    {
+      "id": "pm-role",
+      "name": "Product Manager",
+      "parent": "network-internal",
+      "category": "network",
+      "description": "Role: product roadmap, pricing, availability.",
+      "why": "Access to product decisions.",
+      "status": "active",
+      "priority": "P2"
+    },
+    {
+      "id": "network-mgmt",
+      "name": "Management",
+      "parent": "network",
+      "category": "network",
+      "description": "Line and regional management.",
+      "why": "Sponsorship for scope and growth.",
+      "status": "active",
+      "priority": "P1",
+      "related": [
+        "internal-career"
+      ]
+    },
+    {
+      "id": "network-customers",
+      "name": "Customers",
+      "parent": "network",
+      "category": "network",
+      "description": "Customer RD, SCM, purchasing and management.",
+      "why": "Trust here is the core asset of sales.",
+      "status": "active",
+      "priority": "P1",
+      "related": [
+        "key-accounts"
+      ]
+    },
+    {
+      "id": "network-partners",
+      "name": "Partners",
+      "parent": "network",
+      "category": "network",
+      "description": "Channel and ecosystem partners.",
+      "why": "Extends reach.",
+      "status": "active",
+      "priority": "P3"
+    },
+    {
+      "id": "network-industry",
+      "name": "Industry Network",
+      "parent": "network",
+      "category": "network",
+      "description": "Standards bodies, events, peers.",
+      "why": "Visibility outside the company.",
+      "status": "exploring",
+      "priority": "P3",
+      "related": [
+        "ecosystem",
+        "dc-expert"
+      ]
+    },
+    {
+      "id": "network-academia",
+      "name": "University & Professors",
+      "parent": "network",
+      "category": "network",
+      "description": "Advisors, professors, classmates.",
+      "why": "Research guidance and future collaboration.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "ntut",
+        "uta",
+        "thesis"
+      ]
+    },
+    {
+      "id": "mentors",
+      "name": "Mentors",
+      "parent": "network",
+      "category": "network",
+      "description": "People who give honest advice on career and life.",
+      "why": "Shortcut to judgment.",
+      "status": "exploring",
+      "priority": "P2",
+      "related": [
+        "blind-spots"
+      ]
+    },
+    {
+      "id": "linkedin",
+      "name": "LinkedIn",
+      "parent": "network",
+      "category": "network",
+      "description": "Professional profile and visibility.",
+      "why": "Main channel for international opportunities.",
+      "status": "planning",
+      "priority": "P3",
+      "related": [
+        "overseas-career"
+      ]
+    },
+    {
+      "id": "network-future",
+      "name": "Future Opportunities",
+      "parent": "network",
+      "category": "network",
+      "description": "Relationships that may open future roles.",
+      "why": "Build before needed.",
+      "status": "exploring",
+      "priority": "P3",
+      "related": [
+        "future"
+      ]
+    },
+    {
+      "id": "growth",
+      "name": "Personal Growth",
+      "parent": "self",
+      "category": "growth",
+      "description": "Character and capability growth over time. Connects reading to behavior change.",
+      "why": "The goal is not to collect books; it is to change how I act.",
+      "status": "active",
+      "priority": "P2",
+      "progress": 50,
+      "importance": 4,
+      "attention": 3,
+      "related": [
+        "mindset",
+        "learning"
+      ]
+    },
+    {
+      "id": "wisdom",
+      "name": "Wisdom",
+      "parent": "growth",
+      "category": "growth",
+      "description": "Knowing what matters and acting on it.",
+      "why": "Judgment over cleverness.",
+      "status": "exploring",
+      "priority": "P3"
+    },
+    {
+      "id": "knowledge",
+      "name": "Knowledge",
+      "parent": "growth",
+      "category": "growth",
+      "description": "Structured knowledge across domains.",
+      "why": "Raw material for judgment.",
+      "status": "active",
+      "priority": "P3"
+    },
+    {
+      "id": "reading",
+      "name": "Reading",
+      "parent": "growth",
+      "category": "growth",
+      "description": "Books on leadership, psychology, power, negotiation, strategy, decision making, management.",
+      "why": "Reading only counts when it changes behavior.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "power",
+        "decision-making"
+      ]
+    },
+    {
+      "id": "influence",
+      "name": "Influence",
+      "parent": "growth",
+      "category": "growth",
+      "description": "Moving decisions without formal authority.",
+      "why": "Key skill for BD and leadership.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "power",
+        "career-leadership"
+      ]
+    },
+    {
+      "id": "courage",
+      "name": "Courage",
+      "parent": "growth",
+      "category": "growth",
+      "description": "Acting under uncertainty; saying the hard thing.",
+      "why": "Growth needs uncomfortable moves.",
+      "status": "active",
+      "priority": "P3"
+    },
+    {
+      "id": "humility",
+      "name": "Humility",
+      "parent": "growth",
+      "category": "growth",
+      "description": "Open to being wrong.",
+      "why": "Keeps learning possible.",
+      "status": "active",
+      "priority": "P3",
+      "related": [
+        "ego"
+      ]
+    },
+    {
+      "id": "judgment",
+      "name": "Judgment",
+      "parent": "growth",
+      "category": "growth",
+      "description": "Weighing evidence, risk and timing.",
+      "why": "Senior roles are paid for judgment.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "decision-making"
+      ]
+    },
+    {
+      "id": "strategic-thinking",
+      "name": "Strategic Thinking",
+      "parent": "growth",
+      "category": "growth",
+      "description": "Long horizon, second-order effects, positioning.",
+      "why": "Separates execution roles from strategic roles.",
+      "status": "active",
+      "priority": "P1",
+      "related": [
+        "strategic-mgmt",
+        "vp-path"
+      ]
+    },
+    {
+      "id": "life-experience",
+      "name": "Life Experience",
+      "parent": "growth",
+      "category": "growth",
+      "description": "Lessons from work, family and failure.",
+      "why": "Experience + reflection = growth.",
+      "status": "active",
+      "priority": "P3",
+      "related": [
+        "reflection"
+      ]
+    },
+    {
+      "id": "life-mgmt",
+      "name": "Life Management",
+      "parent": "self",
+      "category": "life",
+      "description": "Systems that keep the whole life organized.",
+      "why": "Good systems reduce the load on willpower.",
+      "status": "active",
+      "priority": "P2",
+      "progress": 55,
+      "importance": 3,
+      "attention": 3,
+      "related": [
+        "review-system",
+        "focus"
+      ]
+    },
+    {
+      "id": "goals",
+      "name": "Goals",
+      "parent": "life-mgmt",
+      "category": "life",
+      "description": "Yearly and quarterly goals across branches.",
+      "why": "Direction for projects and tasks.",
+      "status": "active",
+      "priority": "P1",
+      "related": [
+        "future"
+      ]
+    },
+    {
+      "id": "projects",
+      "name": "Projects",
+      "parent": "life-mgmt",
+      "category": "life",
+      "description": "Active multi-step efforts.",
+      "why": "Where goals become work.",
+      "status": "active",
+      "priority": "P2"
+    },
+    {
+      "id": "tasks",
+      "name": "Tasks",
+      "parent": "life-mgmt",
+      "category": "life",
+      "description": "Next actions.",
+      "why": "Small, concrete, scheduled.",
+      "status": "active",
+      "priority": "P3"
+    },
+    {
+      "id": "decisions",
+      "name": "Decisions",
+      "parent": "life-mgmt",
+      "category": "life",
+      "description": "Decision log and Decision Mode.",
+      "why": "Record why, not only what.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "decision-making",
+        "partner"
+      ]
+    },
+    {
+      "id": "calendar",
+      "name": "Calendar",
+      "parent": "life-mgmt",
+      "category": "life",
+      "description": "Time allocation across work, family, study, health.",
+      "why": "The calendar shows real priorities.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "family-time"
+      ]
+    },
+    {
+      "id": "docs-notes",
+      "name": "Documents & Notes",
+      "parent": "life-mgmt",
+      "category": "life",
+      "description": "Personal knowledge base.",
+      "why": "Memory outside the head.",
+      "status": "active",
+      "priority": "P3"
+    },
+    {
+      "id": "github",
+      "name": "GitHub",
+      "parent": "life-mgmt",
+      "category": "life",
+      "description": "Code repositories and portfolio.",
+      "why": "Public proof of software capability.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "dt-software",
+        "dt-career"
+      ]
+    },
+    {
+      "id": "notion",
+      "name": "Notion",
+      "parent": "life-mgmt",
+      "category": "life",
+      "description": "Notes and planning workspace.",
+      "why": "Central place for plans and logs.",
+      "status": "active",
+      "priority": "P3"
+    },
+    {
+      "id": "ai-tools",
+      "name": "AI Tools",
+      "parent": "life-mgmt",
+      "category": "life",
+      "description": "AI assistants for writing, coding, research, analysis.",
+      "why": "Leverage for limited time.",
+      "status": "active",
+      "priority": "P2",
+      "related": [
+        "ai"
+      ]
+    },
+    {
+      "id": "review-system",
+      "name": "Review System",
+      "parent": "life-mgmt",
+      "category": "life",
+      "description": "Weekly and monthly reviews of this map.",
+      "why": "A life map is only useful if reviewed.",
+      "status": "planning",
+      "priority": "P1",
+      "related": [
+        "reflection",
+        "calendar"
+      ],
+      "nextAction": "Set a 30-minute weekly review slot."
+    },
+    {
+      "id": "inner",
+      "name": "Inner Development",
+      "parent": "self",
+      "category": "inner",
+      "description": "Optional private branch. Generic in the public version; personal notes only in private-data.json.",
+      "why": "Inner stability supports every other branch.",
+      "status": "active",
+      "priority": "P2",
+      "private": true
+    },
+    {
+      "id": "inner-reflection",
+      "name": "Reflection",
+      "parent": "inner",
+      "category": "inner",
+      "description": "Quiet review of intention and action.",
+      "status": "active",
+      "related": [
+        "reflection"
+      ],
+      "private": true
+    },
+    {
+      "id": "meditation",
+      "name": "Meditation",
+      "parent": "inner",
+      "category": "inner",
+      "description": "Regular practice for attention and calm.",
+      "status": "active",
+      "related": [
+        "focus",
+        "stress"
+      ],
+      "private": true
+    },
+    {
+      "id": "gratitude",
+      "name": "Gratitude",
+      "parent": "inner",
+      "category": "inner",
+      "description": "Noticing what is already good.",
+      "status": "active",
+      "private": true
+    },
+    {
+      "id": "compassion",
+      "name": "Compassion",
+      "parent": "inner",
+      "category": "inner",
+      "description": "Care for others and for self.",
+      "status": "active",
+      "related": [
+        "family"
+      ],
+      "private": true
+    },
+    {
+      "id": "cause-effect",
+      "name": "Cause and Effect",
+      "parent": "inner",
+      "category": "inner",
+      "description": "Intention, habit, action, consequence.",
+      "status": "active",
+      "related": [
+        "decision-making"
+      ],
+      "private": true
+    },
+    {
+      "id": "inner-meaning",
+      "name": "Meaning",
+      "parent": "inner",
+      "category": "inner",
+      "description": "Purpose beyond achievement.",
+      "status": "active",
+      "related": [
+        "meaning"
+      ],
+      "private": true
+    },
+    {
+      "id": "inner-stability",
+      "name": "Inner Stability",
+      "parent": "inner",
+      "category": "inner",
+      "description": "Steady mind under pressure.",
+      "status": "active",
+      "related": [
+        "resilience"
+      ],
+      "private": true
+    },
+    {
+      "id": "service",
+      "name": "Service",
+      "parent": "inner",
+      "category": "inner",
+      "description": "Contribution to others.",
+      "status": "active",
+      "related": [
+        "legacy"
+      ],
+      "private": true
+    }
+  ],
+  "timeline": [
+    {
+      "period": "2026",
+      "label": "Now",
+      "items": [
+        {
+          "title": "Data center liquid cooling role",
+          "node": "danfoss"
+        },
+        {
+          "title": "Thesis completion",
+          "node": "thesis"
+        },
+        {
+          "title": "Digital Twin development and validation",
+          "node": "digital-twin"
+        },
+        {
+          "title": "Debt reduction (Phase 1)",
+          "node": "debt-reduction"
+        }
+      ]
+    },
+    {
+      "period": "2027",
+      "label": "Transition window",
+      "items": [
+        {
+          "title": "EMBA completion",
+          "node": "emba"
+        },
+        {
+          "title": "Career transition options reviewed",
+          "node": "decisions"
+        },
+        {
+          "title": "International / Digital Twin opportunities",
+          "node": "dt-career"
+        },
+        {
+          "title": "Journal paper",
+          "node": "journal"
+        },
+        {
+          "title": "Stronger savings phase (Phase 2)",
+          "node": "savings"
+        }
+      ]
+    },
+    {
+      "period": "2028+",
+      "label": "Scale",
+      "items": [
+        {
+          "title": "Regional / international role",
+          "node": "overseas-career"
+        },
+        {
+          "title": "Executive development",
+          "node": "vp-path"
+        },
+        {
+          "title": "Financial growth (Phase 3)",
+          "node": "fin-freedom"
+        },
+        {
+          "title": "Research commercialization",
+          "node": "commercialization"
+        }
+      ]
+    }
+  ],
+  "decision": {
+    "question": "Should I take a new role?",
+    "note": "Scores are starter placeholders (1 = poor for me, 5 = good for me). Set your own. No total score by design.",
+    "options": [
+      {
+        "id": "current",
+        "name": "Current role"
+      },
+      {
+        "id": "internal-dt",
+        "name": "Internal Digital Twin role"
+      },
+      {
+        "id": "external-dc",
+        "name": "External data center role"
+      },
+      {
+        "id": "overseas",
+        "name": "Overseas role"
+      },
+      {
+        "id": "tw-exec",
+        "name": "Taiwan executive role"
+      }
+    ],
+    "criteria": [
+      {
+        "id": "compensation",
+        "name": "Compensation"
+      },
+      {
+        "id": "title",
+        "name": "Title"
+      },
+      {
+        "id": "authority",
+        "name": "Authority"
+      },
+      {
+        "id": "learning",
+        "name": "Learning"
+      },
+      {
+        "id": "tech-growth",
+        "name": "Technical growth"
+      },
+      {
+        "id": "leadership",
+        "name": "Leadership"
+      },
+      {
+        "id": "international",
+        "name": "International exposure"
+      },
+      {
+        "id": "family",
+        "name": "Family impact",
+        "hint": "5 = positive for family"
+      },
+      {
+        "id": "risk",
+        "name": "Risk",
+        "hint": "5 = low risk"
+      },
+      {
+        "id": "long-term",
+        "name": "Long-term career value"
+      }
+    ],
+    "scores": {
+      "current": {
+        "compensation": 3,
+        "title": 3,
+        "authority": 2,
+        "learning": 3,
+        "tech-growth": 3,
+        "leadership": 2,
+        "international": 3,
+        "family": 4,
+        "risk": 5,
+        "long-term": 3
+      },
+      "internal-dt": {
+        "compensation": 3,
+        "title": 3,
+        "authority": 3,
+        "learning": 5,
+        "tech-growth": 5,
+        "leadership": 3,
+        "international": 3,
+        "family": 4,
+        "risk": 4,
+        "long-term": 4
+      },
+      "external-dc": {
+        "compensation": 4,
+        "title": 4,
+        "authority": 3,
+        "learning": 4,
+        "tech-growth": 4,
+        "leadership": 3,
+        "international": 3,
+        "family": 3,
+        "risk": 3,
+        "long-term": 4
+      },
+      "overseas": {
+        "compensation": 5,
+        "title": 4,
+        "authority": 3,
+        "learning": 5,
+        "tech-growth": 4,
+        "leadership": 4,
+        "international": 5,
+        "family": 2,
+        "risk": 2,
+        "long-term": 5
+      },
+      "tw-exec": {
+        "compensation": 4,
+        "title": 5,
+        "authority": 5,
+        "learning": 3,
+        "tech-growth": 2,
+        "leadership": 5,
+        "international": 3,
+        "family": 4,
+        "risk": 3,
+        "long-term": 4
+      }
+    }
+  }
+}
