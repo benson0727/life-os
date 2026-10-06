@@ -1,0 +1,12 @@
+# Personal data — never commit
+data/private-data.json
+data/*.private.json
+*.private.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
