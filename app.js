@@ -1,19 +1,30 @@
 /* =====================================================================
-   BENSON LIFE OS v1.0 — Hyperbolic Life Map
+   BENSON LIFE OS v1.1 — Hyperbolic Life Map
    ---------------------------------------------------------------------
    A focus + context life map on a Poincaré disk, written from scratch in
    plain JavaScript + SVG (no framework, no build step, no runtime deps).
 
    How the map works (short version):
    1. Layout   — every node gets a position in the hyperbolic plane:
-                 depth d  -> hyperbolic radius d * LEVEL_STEP,
-                 subtree  -> angular wedge proportional to its size.
+                 depth d  -> hyperbolic radius (sum of edge lengths),
+                 subtree  -> angular wedge.
                  Stored as a point inside the unit disk (Poincaré model).
-   2. Focus    — the view is a Möbius translation T_c(z) = (z - c)/(1 - c̄z)
-                 that moves point c to the center. Focusing a node animates
-                 c along the hyperbolic geodesic toward that node.
+   2. View     — a disk automorphism M (Möbius transform, kept as a 2x2
+                 complex matrix) maps layout points to screen points.
+                 Focusing a node composes M with the hyperbolic
+                 translation that carries that node to the center.
    3. Context  — points far from the focus shrink toward the disk edge but
                  never disappear, so the whole life stays in view.
+
+   Layout - general:
+     anchored  pure translation; "up" in the layout stays up.
+     geodesic  true composition of translations; the view keeps the
+               rotation picked up while travelling (hyperbolic holonomy).
+     radial    the tree is re-rooted at the focused node, which sits in
+               the center with parent and children evenly around it.
+   Layout - detail:
+     kinship   siblings share the parent's wedge by subtree size.
+     distance  equal wedges; edges get longer in crowded families.
    ===================================================================== */
 (function () {
   'use strict';
@@ -27,26 +38,66 @@
   const DECISION_KEY = 'blos.decision.v1';
   const SVG_NS = 'http://www.w3.org/2000/svg';
 
-  const LEVEL_STEP = 1.15;     // hyperbolic distance between tree levels
+  const LEVEL_STEP = 1.15;     // hyperbolic edge length (kinship)
   const ANIM_MS = 750;         // focus animation duration
+  const MORPH_MS = 700;        // layout change animation duration
+  const TOUR_MS = 2600;        // time per stop in the branch tour
   const ZOOM_MIN = 0.6;
   const ZOOM_MAX = 4;
   const DRAG_THRESHOLD = 5;    // px before a press becomes a drag
   const DBLCLICK_MS = 350;
   const OPTION_COLORS = ['#4F7FD9', '#2E9DB3', '#8873D0', '#D2874E', '#B49A3E', '#C8625A', '#4FA47F'];
 
+  const STATUS_COLORS = {
+    idea: '#8A94A3', exploring: '#2E9DB3', planning: '#4F7FD9', active: '#4FA47F',
+    waiting: '#B49A3E', completed: '#8873D0', paused: '#9C8466', dropped: '#C8625A'
+  };
+  const PRIORITY_COLORS = { P1: '#C8625A', P2: '#D2874E', P3: '#B49A3E', P4: '#7D8A94' };
+  const DEPTH_COLORS = ['#C9A961', '#4F7FD9', '#2E9DB3', '#4FA47F', '#8FA06E', '#8873D0'];
+  const NONE_COLOR = '#5F6874';
+
   const REDUCED_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
   const DEFAULT_PREFS = {
-    theme: null,          // 'dark' | 'light' | null (follow system)
+    theme: null,            // 'dark' | 'light' | null (follow system)
     labels: true,
-    links: 'focus',       // 'off' (hover only) | 'focus' | 'all'
-    rings: true,          // progress rings
+    links: 'focus',         // 'off' (hover only) | 'focus' | 'all'
+    rings: true,            // progress rings
     focusMode: false,
     view: 'map',
-    panelOpen: null,      // null = decide by screen width
+    panelOpen: null,        // null = decide by screen width
+    controlsOpen: null,     // null = decide by screen width
+    controlsTab: 'general',
     lastFocus: 'self',
+    // Controls › General
+    highlightRoot: true,
+    layout: 'anchored',     // 'anchored' | 'geodesic' | 'radial'
+    layoutDetail: 'kinship',// 'kinship' | 'distance'
+    labelMode: 'collision', // 'collision' | 'fade'
+    labelRadius: 0.9,       // disk radius inside which labels are shown
+    showRadius: false,
+    labelSize: 10,
+    // Controls › Mappings
+    colorBy: 'category',    // 'category' | 'status' | 'priority' | 'depth'
+    sizeBy: 'depth',        // 'depth' | 'importance' | 'progress' | 'subtree'
+    leafSquares: false,
+    statusStyle: true,
+    // Controls › Filter
+    maxDepth: 0,            // 0 = all
+    filterMode: 'dim',      // 'dim' | 'hide'
     filters: { categories: [], statuses: [], priorities: [] }
+  };
+
+  const ENUMS = {
+    links: ['off', 'focus', 'all'],
+    view: ['map', 'timeline', 'balance', 'decision'],
+    controlsTab: ['general', 'mappings', 'filter'],
+    layout: ['anchored', 'geodesic', 'radial'],
+    layoutDetail: ['kinship', 'distance'],
+    labelMode: ['collision', 'fade'],
+    colorBy: ['category', 'status', 'priority', 'depth'],
+    sizeBy: ['depth', 'importance', 'progress', 'subtree'],
+    filterMode: ['dim', 'hide']
   };
 
   const state = {
@@ -55,11 +106,13 @@
     privateSource: '',     // 'auto' | 'file'
     privateTried: false,
     privateMode: false,    // never persisted: always starts off (safe for screen sharing)
-    model: null,           // { byId, list, root, related }
+    model: null,           // { byId, list, root, related, maxDepth }
     searchIndex: [],
     focusId: 'self',
-    center: [0, 0],        // current Möbius translation point (disk coords)
-    anim: null,
+    M: null,               // view transform (Möbius matrix)
+    anim: null,            // focus animation
+    morph: null,           // layout change animation
+    tour: null,            // Play / Stop branch tour
     zoom: 1,
     size: { w: 0, h: 0 },
     baseR: 100,
@@ -76,7 +129,9 @@
     pointers: new Map(),   // active pointers (for pinch)
     pinch: null,
     searchSel: -1,
-    searchResults: []
+    searchResults: [],
+    focusNeighborhood: new Set(),
+    lastStatsAt: 0
   };
 
   const el = {};           // cached DOM references
@@ -138,8 +193,15 @@
         }
       }
     } catch (e) { /* corrupted prefs: use defaults */ }
-    if (['off', 'focus', 'all'].indexOf(prefs.links) < 0) prefs.links = 'focus';
-    if (['map', 'timeline', 'balance', 'decision'].indexOf(prefs.view) < 0) prefs.view = 'map';
+    Object.keys(ENUMS).forEach((k) => {
+      if (ENUMS[k].indexOf(prefs[k]) < 0) prefs[k] = DEFAULT_PREFS[k];
+    });
+    prefs.labelRadius = isNum(prefs.labelRadius) ? clamp(prefs.labelRadius, 0.1, 0.98) : DEFAULT_PREFS.labelRadius;
+    prefs.labelSize = isNum(prefs.labelSize) ? clamp(prefs.labelSize, 7, 16) : DEFAULT_PREFS.labelSize;
+    prefs.maxDepth = isNum(prefs.maxDepth) ? Math.max(0, Math.round(prefs.maxDepth)) : 0;
+    ['labels', 'rings', 'focusMode', 'highlightRoot', 'showRadius', 'leafSquares', 'statusStyle'].forEach((k) => {
+      prefs[k] = !!prefs[k];
+    });
     return prefs;
   }
 
@@ -159,14 +221,11 @@
   /* 3. Hyperbolic geometry (complex numbers as [x, y])                  */
   /* ------------------------------------------------------------------ */
 
-  /** Möbius translation T_c(z) = (z - c) / (1 - conj(c) z). Moves c to 0. */
-  function mobius(z, c) {
-    const nx = z[0] - c[0];
-    const ny = z[1] - c[1];
-    const dx = 1 - (c[0] * z[0] + c[1] * z[1]);
-    const dy = -(c[0] * z[1] - c[1] * z[0]);
-    const den = dx * dx + dy * dy || 1e-12;
-    return [(nx * dx + ny * dy) / den, (ny * dx - nx * dy) / den];
+  const cmul = (a, b) => [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]];
+  const cadd = (a, b) => [a[0] + b[0], a[1] + b[1]];
+  function cdiv(a, b) {
+    const d = b[0] * b[0] + b[1] * b[1] || 1e-18;
+    return [(a[0] * b[0] + a[1] * b[1]) / d, (a[1] * b[0] - a[0] * b[1]) / d];
   }
 
   function norm(z) { return Math.sqrt(z[0] * z[0] + z[1] * z[1]); }
@@ -178,6 +237,57 @@
     const r = norm(z);
     const m = max || 0.985;
     return r > m ? [z[0] * m / r, z[1] * m / r] : z;
+  }
+
+  /** Möbius translation T_c(z) = (z - c) / (1 - conj(c) z). Moves c to 0. */
+  function mobius(z, c) {
+    const nx = z[0] - c[0];
+    const ny = z[1] - c[1];
+    const dx = 1 - (c[0] * z[0] + c[1] * z[1]);
+    const dy = -(c[0] * z[1] - c[1] * z[0]);
+    const den = dx * dx + dy * dy || 1e-12;
+    return [(nx * dx + ny * dy) / den, (ny * dx - nx * dy) / den];
+  }
+
+  /* View transform as a 2x2 complex matrix: w = (a z + b) / (c z + d). */
+  function mIdentity() { return { a: [1, 0], b: [0, 0], c: [0, 0], d: [1, 0] }; }
+
+  /** Matrix of T_p (moves p to the origin). */
+  function mTranslate(p) { return { a: [1, 0], b: [-p[0], -p[1]], c: [-p[0], p[1]], d: [1, 0] }; }
+
+  function mApply(M, z) { return cdiv(cadd(cmul(M.a, z), M.b), cadd(cmul(M.c, z), M.d)); }
+
+  /** A ∘ B (apply B first). */
+  function mCompose(A, B) {
+    return {
+      a: cadd(cmul(A.a, B.a), cmul(A.b, B.c)),
+      b: cadd(cmul(A.a, B.b), cmul(A.b, B.d)),
+      c: cadd(cmul(A.c, B.a), cmul(A.d, B.c)),
+      d: cadd(cmul(A.c, B.b), cmul(A.d, B.d))
+    };
+  }
+
+  function mInverse(M) {
+    return { a: M.d, b: [-M.b[0], -M.b[1]], c: [-M.c[0], -M.c[1]], d: M.a };
+  }
+
+  /** Rescale so |d| = 1 (keeps numbers bounded after many compositions). */
+  function mNormalize(M) {
+    const s = norm(M.d) || 1;
+    const k = (z) => [z[0] / s, z[1] / s];
+    return { a: k(M.a), b: k(M.b), c: k(M.c), d: k(M.d) };
+  }
+
+  /** Layout point currently shown at the screen center. */
+  function mCenter(M) { return mApply(mInverse(M), [0, 0]); }
+
+  /** Same center, no rotation. */
+  function stripRotation(M) { return mTranslate(clampDisk(mCenter(M), 0.9995)); }
+
+  /** Apply the active "Layout - general" rule after any view change. */
+  function finalizeView(M) {
+    const n = mNormalize(M);
+    return state.prefs.layout === 'geodesic' ? n : stripRotation(n);
   }
 
   /**
@@ -363,10 +473,13 @@
     });
     list.forEach((n) => { if (n._p) byId.get(n._p).children.push(n); });
 
-    // Depth via DFS from root.
-    (function setDepth(n, d) {
+    // Depth and subtree size via DFS from root.
+    let maxDepth = 0;
+    (function walk(n, d) {
       n.depth = d;
-      n.children.forEach((c) => setDepth(c, d + 1));
+      if (d > maxDepth) maxDepth = d;
+      n._sub = 1 + n.children.reduce((s, c) => s + walk(c, d + 1), 0);
+      return n._sub;
     })(root, 0);
 
     // Undirected secondary relations.
@@ -381,10 +494,9 @@
       });
     });
 
-    // Colors.
     list.forEach((n) => { n.color = categoryInfo(n.category).color; });
 
-    return { byId: byId, list: list, root: root, related: related };
+    return { byId: byId, list: list, root: root, related: related, maxDepth: maxDepth };
   }
 
   function pathTo(node) {
@@ -412,42 +524,87 @@
   /* 6. Layout in the hyperbolic plane                                   */
   /* ------------------------------------------------------------------ */
 
-  function layoutTree(root) {
+  /**
+   * Compute n.pos for every node.
+   * anchored / geodesic: rooted at SELF.
+   * radial:              re-rooted at the focused node (parent becomes a
+   *                      neighbor and is placed at 12 o'clock).
+   */
+  function computeLayout() {
+    const m = state.model;
+    const radial = state.prefs.layout === 'radial';
+    const distance = state.prefs.layoutDetail === 'distance';
+    const center = radial ? (m.byId.get(state.focusId) || m.root) : m.root;
+
+    // Children per node for this layout.
+    const kids = new Map();
+    if (!radial) {
+      m.list.forEach((n) => kids.set(n.id, n.children));
+    } else {
+      const visited = new Set([center.id]);
+      const queue = [center];
+      while (queue.length) {
+        const n = queue.shift();
+        const around = n.children.slice();
+        if (n._p) around.unshift(m.byId.get(n._p));
+        const next = around.filter((x) => !visited.has(x.id));
+        next.forEach((x) => { visited.add(x.id); queue.push(x); });
+        kids.set(n.id, next);
+      }
+    }
+
+    const weight = new Map();
     (function weigh(n) {
-      n._weight = n.children.length ? n.children.reduce((s, c) => s + weigh(c), 0) : 1;
-      return n._weight;
-    })(root);
+      const ks = kids.get(n.id) || [];
+      const w = ks.length ? ks.reduce((s, c) => s + weigh(c), 0) : 1;
+      weight.set(n.id, w);
+      return w;
+    })(center);
 
-    root.pos = [0, 0];
-    root.rho = 0;
+    const share = (c) => (distance ? 1 : Math.pow(weight.get(c.id), 0.7));
 
-    function place(n, a0, a1) {
-      const kids = n.children;
-      if (!kids.length) return;
-      // Compress weights so large branches do not starve small ones.
-      const ws = kids.map((c) => Math.pow(c._weight, 0.7));
-      const total = ws.reduce((s, w) => s + w, 0);
+    function place(n, rho, a0, a1) {
+      const ks = kids.get(n.id) || [];
+      if (!ks.length) return;
+      const ws = ks.map(share);
+      const total = ws.reduce((s, w) => s + w, 0) || 1;
+      const step = distance ? LEVEL_STEP * (0.75 + 0.13 * Math.sqrt(ks.length)) : LEVEL_STEP;
       let a = a0;
-      kids.forEach((c, i) => {
+      ks.forEach((c, i) => {
         const span = (a1 - a0) * ws[i] / total;
-        c.angle = a + span / 2;
-        c.rho = n.rho + LEVEL_STEP;
-        const r = Math.tanh(c.rho / 2);   // hyperbolic radius -> Poincaré radius
-        c.pos = [r * Math.cos(c.angle), r * Math.sin(c.angle)];
-        place(c, a, a + span);
+        const ang = a + span / 2;
+        const r = Math.tanh((rho + step) / 2);   // hyperbolic radius -> Poincaré radius
+        c.pos = [r * Math.cos(ang), r * Math.sin(ang)];
+        place(c, rho + step, a, a + span);
         a += span;
       });
     }
 
-    // Start so the first branch sits at 12 o'clock.
-    const firstW = root.children.length ? Math.pow(root.children[0]._weight, 0.7) : 1;
-    const totalW = root.children.reduce((s, c) => s + Math.pow(c._weight, 0.7), 0) || 1;
-    const start = -Math.PI / 2 - Math.PI * firstW / totalW;
-    place(root, start, start + 2 * Math.PI);
+    center.pos = [0, 0];
+    const top = kids.get(center.id) || [];
+    const firstW = top.length ? share(top[0]) : 1;
+    const totalW = top.reduce((s, c) => s + share(c), 0) || 1;
+    const start = -Math.PI / 2 - Math.PI * firstW / totalW;   // first neighbor at 12 o'clock
+    place(center, 0, start, start + 2 * Math.PI);
+  }
+
+  /** Recompute positions; optionally morph from what is on screen now. */
+  function relayout(animate) {
+    const m = state.model;
+    const from = new Map();
+    if (animate && !REDUCED_MOTION) {
+      m.list.forEach((n) => { if (n._w && n._visible) from.set(n.id, n._w.slice()); });
+    }
+    computeLayout();
+    const focus = m.byId.get(state.focusId) || m.root;
+    state.anim = null;
+    state.M = state.prefs.layout === 'radial' ? mIdentity() : mTranslate(clampDisk(focus.pos, 0.9995));
+    state.morph = from.size ? { from: from, start: performance.now(), dur: MORPH_MS } : null;
+    requestRender();
   }
 
   /* ------------------------------------------------------------------ */
-  /* 7. Map rendering                                                    */
+  /* 7. Visual mappings                                                  */
   /* ------------------------------------------------------------------ */
 
   function statusStyle(status) {
@@ -459,6 +616,94 @@
     }
   }
 
+  function mappedColor(n) {
+    switch (state.prefs.colorBy) {
+      case 'status': return STATUS_COLORS[n.status] || NONE_COLOR;
+      case 'priority': return PRIORITY_COLORS[n.priority] || NONE_COLOR;
+      case 'depth': return DEPTH_COLORS[Math.min(n.depth, DEPTH_COLORS.length - 1)];
+      default: return n.color;
+    }
+  }
+
+  function baseSize(n, focus) {
+    const m = state.model;
+    let b;
+    switch (state.prefs.sizeBy) {
+      case 'importance': b = isNum(n.importance) ? 3.5 + clamp(n.importance, 0, 5) * 1.5 : 4.5; break;
+      case 'progress': b = isNum(n.progress) ? 3.5 + clamp(n.progress, 0, 100) / 100 * 7.5 : 4; break;
+      case 'subtree': b = 4 + Math.min(9, Math.sqrt(n._sub || 1) * 1.3); break;
+      default:
+        b = n.depth === 0 ? 11 : n.depth === 1 ? 8 : n.depth === 2 ? 6 : 5;
+        if (n.priority === 'P1') b += 1;
+    }
+    if (n === m.root && state.prefs.highlightRoot) b = Math.max(b, 11);
+    if (n === focus) b = Math.max(b, 10);
+    return b;
+  }
+
+  /** Apply colors and fill style to every node (no DOM rebuild needed). */
+  function applyNodeStyles() {
+    const m = state.model;
+    if (!m) return;
+    m.list.forEach((n) => {
+      const color = mappedColor(n);
+      const style = state.prefs.statusStyle ? statusStyle(n.status) : 'filled';
+      [n.dotEl, n.sqEl].forEach((shape) => {
+        if (!shape || n === m.root) return;
+        shape.setAttribute('stroke', color);
+        shape.removeAttribute('fill-opacity');
+        shape.removeAttribute('stroke-dasharray');
+        if (style === 'hollow') {
+          shape.setAttribute('fill', 'var(--disk)');
+        } else if (style === 'muted') {
+          shape.setAttribute('fill', color);
+          shape.setAttribute('fill-opacity', '0.35');
+        } else if (style === 'dropped') {
+          shape.setAttribute('fill', 'var(--disk)');
+          shape.setAttribute('stroke-dasharray', '2 2');
+        } else {
+          shape.setAttribute('fill', color);
+        }
+      });
+    });
+    el.map.classList.toggle('root-plain', !state.prefs.highlightRoot);
+    renderLegend();
+  }
+
+  function colorKeyItems() {
+    const s = state.publicData.settings;
+    switch (state.prefs.colorBy) {
+      case 'status': return s.statuses.map((x) => [STATUS_COLORS[x.id] || NONE_COLOR, x.name]);
+      case 'priority': return s.priorities.map((x) => [PRIORITY_COLORS[x.id] || NONE_COLOR, x.name]);
+      case 'depth': return DEPTH_COLORS.slice(0, Math.min(DEPTH_COLORS.length, state.model.maxDepth + 1))
+        .map((c, i) => [c, i === 0 ? 'Root' : 'Level ' + i]);
+      default: return [];
+    }
+  }
+
+  function renderLegend() {
+    const key = colorKeyItems();
+    const keyHtml = key.map((k) =>
+      '<span class="legend-item"><i class="lg-swatch" style="background:' + k[0] + '"></i>' + escapeHtml(k[1]) + '</span>').join('');
+    let html = keyHtml;
+    if (state.prefs.statusStyle) {
+      html += '<span class="legend-item"><i class="lg-dot lg-filled"></i>Active / Done</span>' +
+        '<span class="legend-item"><i class="lg-dot lg-hollow"></i>Idea / Exploring / Planning</span>' +
+        '<span class="legend-item"><i class="lg-dot lg-muted"></i>Waiting / Paused</span>';
+    }
+    if (state.prefs.leafSquares) {
+      html += '<span class="legend-item"><i class="lg-sq"></i>Leaf</span>';
+    }
+    html += '<span class="legend-item"><i class="lg-line"></i>Related</span>';
+    el.legend.innerHTML = html;
+    el.ctlColorKey.innerHTML = key.map((k) =>
+      '<span><i class="lg-swatch" style="background:' + k[0] + '"></i>' + escapeHtml(k[1]) + '</span>').join('');
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 8. Map rendering                                                    */
+  /* ------------------------------------------------------------------ */
+
   function buildMapDom() {
     const svg = el.map;
     svg.textContent = '';
@@ -466,6 +711,7 @@
     mapEls.viewport = vp;
     mapEls.disk = svgEl('circle', { class: 'disk', cx: 0, cy: 0, r: 100 }, vp);
     mapEls.guide = svgEl('circle', { class: 'disk-guide', cx: 0, cy: 0, r: 50 }, vp);
+    mapEls.labelRing = svgEl('circle', { class: 'label-ring', cx: 0, cy: 0, r: 80 }, vp);
     mapEls.edges = svgEl('g', { class: 'edges' }, vp);
     mapEls.links = svgEl('g', { class: 'links' }, vp);
     mapEls.nodes = svgEl('g', { class: 'nodes' }, vp);
@@ -487,24 +733,9 @@
       }, mapEls.nodes);
       n.haloEl = svgEl('circle', { class: 'halo', r: 10 }, g);
       n.ringEl = svgEl('circle', { class: 'ring', r: 10, transform: 'rotate(-90)' }, g);
-      const dot = svgEl('circle', { class: 'dot', r: 6 }, g);
-      const style = statusStyle(n.status);
-      if (n !== m.root) {
-        dot.setAttribute('stroke', n.color);
-        if (style === 'hollow') {
-          dot.setAttribute('fill', 'var(--disk)');
-        } else if (style === 'muted') {
-          dot.setAttribute('fill', n.color);
-          dot.setAttribute('fill-opacity', '0.35');
-        } else if (style === 'dropped') {
-          dot.setAttribute('fill', 'var(--disk)');
-          dot.setAttribute('stroke-dasharray', '2 2');
-        } else {
-          dot.setAttribute('fill', n.color);
-        }
-      }
+      n.dotEl = svgEl('circle', { class: 'dot', r: 6 }, g);
+      n.sqEl = (n.children.length === 0 && n !== m.root) ? svgEl('rect', { class: 'sq', display: 'none' }, g) : null;
       n.el = g;
-      n.dotEl = dot;
 
       const label = svgEl('text', { class: 'label' + (n === m.root ? ' is-root' : '') }, mapEls.labels);
       if (n === m.root && n.subtitle) {
@@ -518,6 +749,7 @@
       }
       n.labelEl = label;
     });
+    applyNodeStyles();
   }
 
   function requestRender() {
@@ -531,35 +763,53 @@
 
   function renderMap() {
     const m = state.model;
-    if (!m || !mapEls.viewport) return;
+    if (!m || !mapEls.viewport || !state.M) return;
     const W = state.size.w;
     const H = state.size.h;
     if (W < 10 || H < 10) return;
+    const t0 = performance.now();
 
     const R = state.baseR * state.zoom;
     const sizeScale = Math.sqrt(state.zoom);
-    mapEls.viewport.setAttribute('transform', 'translate(' + (W / 2) + ',' + (H / 2) + ')');
+    const prefs = state.prefs;
+    mapEls.viewport.setAttribute('transform', 'translate(' + state.size.cx + ',' + state.size.cy + ')');
     mapEls.disk.setAttribute('r', R.toFixed(1));
     mapEls.guide.setAttribute('r', (R * Math.tanh(LEVEL_STEP / 2)).toFixed(1));
+    if (prefs.showRadius) {
+      mapEls.labelRing.removeAttribute('display');
+      mapEls.labelRing.setAttribute('r', (R * prefs.labelRadius).toFixed(1));
+    } else {
+      mapEls.labelRing.setAttribute('display', 'none');
+    }
 
-    const c = state.center;
+    // Layout-change morph progress.
+    const morph = state.morph;
+    let mt = -1;
+    if (morph) {
+      const p = clamp((performance.now() - morph.start) / morph.dur, 0, 1);
+      mt = easeInOutCubic(p);
+      if (p >= 1) state.morph = null;
+    }
+
+    const M = state.M;
     const focus = m.byId.get(state.focusId) || m.root;
+    let shown = 0;
 
     // Project nodes.
     m.list.forEach((n) => {
-      const w = mobius(n.pos, c);
+      let w = mApply(M, n.pos);
+      if (mt >= 0) {
+        const f = morph.from.get(n.id);
+        if (f) w = [f[0] + (w[0] - f[0]) * mt, f[1] + (w[1] - f[1]) * mt];
+      }
       const s = 1 - (w[0] * w[0] + w[1] * w[1]);   // ~ local hyperbolic scale
       n._w = w;
       n._s = s;
       n._x = w[0] * R;
       n._y = w[1] * R;
-      n._visible = s > 0.004;
+      n._visible = s > 0.004 && !n._hidden;
 
-      let base = n === m.root ? 11 : n.depth === 1 ? 8 : n.depth === 2 ? 6 : 5;
-      if (n.priority === 'P1') base += 1;
-      if (n === focus) base = Math.max(base, 10);
-      n._r = Math.max(1.2, base * (0.22 + 0.78 * Math.max(0, s)) * sizeScale);
-
+      n._r = Math.max(1.2, baseSize(n, focus) * (0.22 + 0.78 * Math.max(0, s)) * sizeScale);
       const fade = clamp((s - 0.004) / 0.06, 0, 1);
       n._op = fade * (n._dim ? 0.18 : 1);
 
@@ -567,14 +817,28 @@
         n.el.setAttribute('display', 'none');
         return;
       }
+      shown++;
       n.el.removeAttribute('display');
       n.el.setAttribute('transform', 'translate(' + n._x.toFixed(1) + ',' + n._y.toFixed(1) + ')');
       n.el.setAttribute('opacity', n._op.toFixed(3));
-      n.dotEl.setAttribute('r', n._r.toFixed(2));
       n.haloEl.setAttribute('r', (n._r + 4).toFixed(2));
 
+      if (n.sqEl && prefs.leafSquares) {
+        const h = n._r * 0.88;
+        n.dotEl.setAttribute('display', 'none');
+        n.sqEl.removeAttribute('display');
+        n.sqEl.setAttribute('x', (-h).toFixed(2));
+        n.sqEl.setAttribute('y', (-h).toFixed(2));
+        n.sqEl.setAttribute('width', (2 * h).toFixed(2));
+        n.sqEl.setAttribute('height', (2 * h).toFixed(2));
+      } else {
+        if (n.sqEl) n.sqEl.setAttribute('display', 'none');
+        n.dotEl.removeAttribute('display');
+        n.dotEl.setAttribute('r', n._r.toFixed(2));
+      }
+
       // Progress ring (personal indicator, not a measurement).
-      if (state.prefs.rings && isNum(n.progress) && s > 0.3 && n._r > 3.5) {
+      if (prefs.rings && isNum(n.progress) && s > 0.3 && n._r > 3.5) {
         const rr = n._r + 2.5;
         const circ = 2 * Math.PI * rr;
         const p = clamp(n.progress, 0, 100) / 100;
@@ -591,7 +855,7 @@
       if (!n.edgeEl) return;
       const p = m.byId.get(n._p);
       const sMin = Math.min(n._s, p._s);
-      if (sMin < 0.004) { n.edgeEl.setAttribute('display', 'none'); return; }
+      if (sMin < 0.004 || n._hidden || p._hidden) { n.edgeEl.setAttribute('display', 'none'); return; }
       n.edgeEl.removeAttribute('display');
       n.edgeEl.setAttribute('d', geodesicPath(p._w, n._w, R, sMin > 0.3 ? 12 : 6));
       n.edgeEl.setAttribute('stroke-width', (0.5 + 1.1 * sMin).toFixed(2));
@@ -603,19 +867,34 @@
     state.linkPairs.forEach((pair) => {
       const a = m.byId.get(pair.a);
       const b = m.byId.get(pair.b);
-      if (!a || !b || Math.min(a._s, b._s) < 0.004) { pair.el.setAttribute('display', 'none'); return; }
+      if (!a || !b || !a._visible || !b._visible) { pair.el.setAttribute('display', 'none'); return; }
       pair.el.removeAttribute('display');
       pair.el.setAttribute('d', geodesicPath(a._w, b._w, R, 16));
     });
 
-    renderLabels(focus, R);
+    renderLabels(focus);
+
+    // Keep animating while a layout morph is running.
+    if (state.morph) requestRender();
+
+    // Stats (throttled).
+    const now = performance.now();
+    if (now - state.lastStatsAt > 250 || !state.anim) {
+      state.lastStatsAt = now;
+      el.ctlStats.textContent = shown + '/' + m.list.length + ' nodes · ' + (now - t0).toFixed(1) + 'ms';
+    }
   }
 
-  /** Greedy label placement: important labels first, skip overlaps. */
-  function renderLabels(focus, R) {
+  /** Label placement: "collision aware" (greedy, skip overlaps) or "radius fade". */
+  function renderLabels(focus) {
     const m = state.model;
-    const showAll = state.prefs.labels;
-    const focusSet = state.focusNeighborhood || new Set();
+    const prefs = state.prefs;
+    const focusSet = state.focusNeighborhood;
+    const fadeMode = prefs.labelMode === 'fade';
+    const limit = prefs.labelRadius;
+    const base = prefs.labelSize;
+    const minX = -state.size.cx + 4;               // label bounds in viewport coords
+    const maxX = state.size.availW - state.size.cx - 4;
     const items = [];
 
     m.list.forEach((n) => {
@@ -638,23 +917,25 @@
       const n = it.n;
       const label = n.labelEl;
       const hide = () => label.setAttribute('display', 'none');
-
       if (!n._visible) return hide();
-      if (!it.special && (!showAll || n._s < 0.16 || n._op < 0.15)) return hide();
+
+      const rr = norm(n._w);
+      if (!it.special && (!prefs.labels || n._op < 0.15 || rr > limit)) return hide();
 
       const isFocus = n === focus;
       const isRoot = n === m.root;
-      let font = 9.5 + 4.5 * Math.max(0, n._s);
-      if (isRoot) font = 13 + 2 * n._s;
-      if (isFocus) font = Math.max(font, 14.5);
+      let font = base * (0.95 + 0.45 * Math.max(0, n._s));
+      if (isRoot) font = base * 1.3 + 2 * n._s;
+      if (isFocus) font = Math.max(font, base * 1.45);
 
-      const text = n.name + (isRoot && n.subtitle ? '' : '');
-      const width = text.length * font * 0.58 + 2;
+      const width = n.name.length * font * 0.58 + 2;
       const lines = n.labelLines ? 2 : 1;
       const height = font * 1.25 * lines;
 
-      let x, y, anchor;
-      if (isFocus || isRoot || norm(n._w) < 0.04) {
+      let x;
+      let y;
+      let anchor;
+      if (isFocus || isRoot || rr < 0.04) {
         anchor = 'middle';
         x = n._x;
         y = n._y + n._r + font + 3;
@@ -669,26 +950,29 @@
       }
 
       // Keep labels inside the visible area (matters on narrow screens).
-      const halfW = state.size.w / 2 - 4;
-      if (anchor === 'start' && x + width > halfW) {
+      if (anchor === 'start' && x + width > maxX) {
         anchor = 'end';
         x = n._x - n._r - 5;
-      } else if (anchor === 'end' && x - width < -halfW) {
+      } else if (anchor === 'end' && x - width < minX) {
         anchor = 'start';
         x = n._x + n._r + 5;
       } else if (anchor === 'middle') {
-        x = clamp(x, -halfW + width / 2, halfW - width / 2);
+        x = clamp(x, minX + width / 2, maxX - width / 2);
       }
       const x0 = anchor === 'start' ? x : anchor === 'end' ? x - width : x - width / 2;
-      if (!it.special && (x0 < -halfW || x0 + width > halfW)) return hide();
+      if (!it.special && (x0 < minX || x0 + width > maxX)) return hide();
+
       const box = { x0: x0 - 2, x1: x0 + width + 2, y0: y - font - 1, y1: y - font + height + 1 };
-      if (!it.special && overlaps(box)) return hide();
+      if (!fadeMode && !it.special && overlaps(box)) return hide();
       placed.push(box);
+
+      let opacity = Math.max(n._op, isFocus ? 1 : 0);
+      if (fadeMode && !it.special) opacity *= clamp(1 - Math.pow(rr / limit, 3), 0.12, 1);
 
       label.removeAttribute('display');
       label.setAttribute('text-anchor', anchor);
       label.setAttribute('font-size', font.toFixed(1));
-      label.setAttribute('opacity', Math.max(n._op, isFocus ? 1 : 0).toFixed(3));
+      label.setAttribute('opacity', opacity.toFixed(3));
       label.classList.toggle('is-focus', isFocus && !isRoot);
       if (n.labelLines) {
         label.removeAttribute('x');
@@ -733,53 +1017,68 @@
     state.linkPairs = pairs;
   }
 
-  /** Apply focus, filter and Focus-mode classes; recompute dimming. */
+  /** Apply focus, filter, depth and Focus-mode states; recompute dim / hide. */
   function updateNodeStates() {
     const m = state.model;
-    const f = state.prefs.filters;
+    const prefs = state.prefs;
+    const f = prefs.filters;
     const nb = neighborhood(state.focusId);
     state.focusNeighborhood = nb;
     const rel = m.related.get(state.focusId) || new Set();
+    const focusPath = new Set(pathTo(m.byId.get(state.focusId) || m.root).map((n) => n.id));
+
+    const matches = (n) =>
+      (!f.categories.length || f.categories.indexOf(n.category) >= 0) &&
+      (!f.statuses.length || f.statuses.indexOf(n.status) >= 0) &&
+      (!f.priorities.length || f.priorities.indexOf(n.priority) >= 0);
+    const depthOk = (n) => !prefs.maxDepth || n.depth <= prefs.maxDepth || focusPath.has(n.id);
+
+    // In "hide" mode keep matching nodes plus their ancestors (tree stays connected).
+    let keep = null;
+    if (prefs.filterMode === 'hide') {
+      keep = new Set(focusPath);
+      m.list.forEach((n) => {
+        if (matches(n) && depthOk(n)) pathTo(n).forEach((a) => keep.add(a.id));
+      });
+    }
 
     m.list.forEach((n) => {
-      const matches =
-        (!f.categories.length || f.categories.indexOf(n.category) >= 0) &&
-        (!f.statuses.length || f.statuses.indexOf(n.status) >= 0) &&
-        (!f.priorities.length || f.priorities.indexOf(n.priority) >= 0);
-      n._dim = n !== m.root && (!matches || (state.prefs.focusMode && !nb.has(n.id)));
+      const isRoot = n === m.root;
+      n._hidden = !isRoot && (keep ? !keep.has(n.id) : !depthOk(n));
+      n._dim = !isRoot && (!matches(n) || (prefs.focusMode && !nb.has(n.id)));
       n.el.classList.toggle('is-focus', n.id === state.focusId);
       n.el.classList.toggle('is-related', rel.has(n.id));
       n.el.classList.toggle('is-highlight', n.id === state.highlightId);
       // Keyboard: only the focus neighborhood is in the tab order.
-      n.el.setAttribute('tabindex', nb.has(n.id) ? '0' : '-1');
+      n.el.setAttribute('tabindex', nb.has(n.id) && !n._hidden ? '0' : '-1');
     });
   }
 
   /* ------------------------------------------------------------------ */
-  /* 8. Focus, animation, history                                        */
+  /* 9. Focus, animation, history, tour                                  */
   /* ------------------------------------------------------------------ */
 
-  function animateCenterTo(target, duration) {
-    const c0 = state.center.slice();
-    const w = mobius(target, c0);              // target in current display coords
+  /** Move layout point `target` to the center along the hyperbolic geodesic. */
+  function animateTo(target, duration) {
+    const M0 = state.M;
+    const w = mApply(M0, target);               // target in current display coords
     const r = norm(w);
     state.anim = null;
+    state.morph = null;
     if (r < 1e-6 || duration === 0 || REDUCED_MOTION) {
-      state.center = clampDisk(target.slice(), 0.9995);
+      state.M = finalizeView(mCompose(mTranslate(clampDisk(w, 0.9995)), M0));
       requestRender();
       return;
     }
     const dist = atanh(Math.min(r, 0.999999));  // half hyperbolic distance
-    const back = [-c0[0], -c0[1]];
     const anim = { start: performance.now(), dur: duration || ANIM_MS };
     state.anim = anim;
 
     const step = (now) => {
       if (state.anim !== anim) return;          // cancelled or replaced
       const p = clamp((now - anim.start) / anim.dur, 0, 1);
-      const t = easeInOutCubic(p);
-      const k = Math.tanh(t * dist) / r;        // move along the geodesic at uniform hyperbolic speed
-      state.center = mobius([w[0] * k, w[1] * k], back);
+      const k = Math.tanh(easeInOutCubic(p) * dist) / r;   // uniform hyperbolic speed, eased
+      state.M = finalizeView(mCompose(mTranslate([w[0] * k, w[1] * k]), M0));
       renderMap();
       if (p < 1) window.requestAnimationFrame(step);
       else state.anim = null;
@@ -801,7 +1100,8 @@
     state.prefs.lastFocus = id;
     savePrefs();
     onFocusChanged();
-    animateCenterTo(node.pos, options.animate === false ? 0 : ANIM_MS);
+    if (state.prefs.layout === 'radial') relayout(options.animate !== false);
+    else animateTo(node.pos, options.animate === false ? 0 : ANIM_MS);
   }
 
   function onFocusChanged() {
@@ -814,6 +1114,7 @@
   }
 
   function goBack() {
+    stopTour();
     while (state.history.length) {
       const id = state.history.pop();
       if (state.model.byId.has(id)) {
@@ -826,6 +1127,7 @@
   }
 
   function goForward() {
+    stopTour();
     while (state.forward.length) {
       const id = state.forward.pop();
       if (state.model.byId.has(id)) {
@@ -838,8 +1140,16 @@
   }
 
   function goHome() {
-    state.zoom = 1;
+    stopTour();
+    setZoom(1);
     focusNode(state.model.root.id);
+  }
+
+  /** Controls › Reset view: zoom 100 %, focus centered, rotation removed. */
+  function resetView() {
+    stopTour();
+    setZoom(1);
+    relayout(true);
   }
 
   function updateNavButtons() {
@@ -860,11 +1170,43 @@
 
   function setZoom(z) {
     state.zoom = clamp(z, ZOOM_MIN, ZOOM_MAX);
+    const pct = Math.round(state.zoom * 100);
+    if (el.ctlZoom) {
+      el.ctlZoom.value = String(pct);
+      el.ctlZoomOut.textContent = pct + '%';
+    }
     requestRender();
   }
 
+  /** Animation › Play: visit SELF's branches one by one, then SELF, loop. */
+  function startTour() {
+    stopTour();
+    const m = state.model;
+    const seq = m.root.children.map((c) => c.id).concat([m.root.id]);
+    if (!seq.length) return;
+    state.tour = { seq: seq, i: 0, timer: null };
+    el.ctlPlay.setAttribute('aria-pressed', 'true');
+    if (state.prefs.view !== 'map') setView('map');
+    const step = () => {
+      const tour = state.tour;
+      if (!tour) return;
+      const id = tour.seq[tour.i % tour.seq.length];
+      tour.i++;
+      if (state.model.byId.has(id)) focusNode(id, { push: false });
+      tour.timer = setTimeout(step, TOUR_MS);
+    };
+    step();
+  }
+
+  function stopTour() {
+    if (!state.tour) return;
+    clearTimeout(state.tour.timer);
+    state.tour = null;
+    el.ctlPlay.setAttribute('aria-pressed', 'false');
+  }
+
   /* ------------------------------------------------------------------ */
-  /* 9. Map interaction: click, double-click, drag, wheel, pinch, hover  */
+  /* 10. Map interaction: click, double-click, drag, wheel, pinch, hover */
   /* ------------------------------------------------------------------ */
 
   function nodeIdFromEvent(e) {
@@ -872,20 +1214,29 @@
     return t ? t.getAttribute('data-id') : null;
   }
 
-  function panBy(dx, dy) {
-    const R = state.baseR * state.zoom;
-    let d = [dx / R, dy / R];
+  /** Move the content by d (disk units, screen direction). */
+  function panByDisk(dx, dy) {
+    let d = [dx, dy];
     const len = norm(d);
+    if (len < 1e-9) return;
     if (len > 0.25) d = [d[0] * 0.25 / len, d[1] * 0.25 / len];
-    // Content follows the pointer: new center = T_c^{-1}(-d).
-    const c = state.center;
-    state.center = clampDisk(mobius([-d[0], -d[1]], [-c[0], -c[1]]), 0.995);
+    // T_{-d} moves the origin to d: the whole picture follows the pointer.
+    const next = finalizeView(mCompose(mTranslate([-d[0], -d[1]]), state.M));
+    if (norm(mCenter(next)) > 0.995) return;   // do not drift off into the boundary
+    state.M = next;
     state.anim = null;
+    state.morph = null;
     requestRender();
+  }
+
+  function panBy(dxPx, dyPx) {
+    const R = state.baseR * state.zoom;
+    panByDisk(dxPx / R, dyPx / R);
   }
 
   function onPointerDown(e) {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
+    stopTour();
     state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (state.pointers.size === 2) {
       const pts = Array.from(state.pointers.values());
@@ -926,10 +1277,7 @@
     }
 
     // Hover (mouse / pen only).
-    if (e.pointerType !== 'touch') {
-      const id = nodeIdFromEvent(e);
-      setHover(id, e);
-    }
+    if (e.pointerType !== 'touch') setHover(nodeIdFromEvent(e), e);
   }
 
   function onPointerUp(e) {
@@ -1003,6 +1351,7 @@
     if (!id) return;
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
+      stopTour();
       if (e.shiftKey) openDetails(id);
       else focusNode(id);
     }
@@ -1017,8 +1366,60 @@
     }
   }
 
+  /** Controls › Pan › Interactive: hold and drag the knob to glide. */
+  function wireJoystick() {
+    const pad = el.ctlJoystick;
+    const knob = pad.querySelector('.joy-knob');
+    let active = null;
+    let off = [0, 0];
+
+    const move = (e) => {
+      const r = pad.getBoundingClientRect();
+      const max = r.width / 2 - 10;
+      let dx = e.clientX - (r.left + r.width / 2);
+      let dy = e.clientY - (r.top + r.height / 2);
+      const len = Math.hypot(dx, dy);
+      if (len > max) { dx *= max / len; dy *= max / len; }
+      off = [dx / max, dy / max];
+      knob.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px)';
+    };
+    const loop = () => {
+      if (active === null) return;
+      // Knob points where you want to look: content moves the other way.
+      if (off[0] || off[1]) panByDisk(-off[0] * 0.014, -off[1] * 0.014);
+      window.requestAnimationFrame(loop);
+    };
+    const end = (e) => {
+      if (active !== e.pointerId) return;
+      active = null;
+      off = [0, 0];
+      pad.classList.remove('active');
+      knob.style.transform = '';
+    };
+
+    pad.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      stopTour();
+      active = e.pointerId;
+      pad.classList.add('active');
+      try { pad.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+      move(e);
+      loop();
+    });
+    pad.addEventListener('pointermove', (e) => { if (active === e.pointerId) move(e); });
+    pad.addEventListener('pointerup', end);
+    pad.addEventListener('pointercancel', end);
+    pad.addEventListener('keydown', (e) => {
+      const k = { ArrowLeft: [1, 0], ArrowRight: [-1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
+      if (!k) return;
+      e.preventDefault();
+      stopTour();
+      panByDisk(k[0] * 0.06, k[1] * 0.06);
+    });
+  }
+
   /* ------------------------------------------------------------------ */
-  /* 10. Breadcrumb and details panel                                    */
+  /* 11. Breadcrumb and details panel                                    */
   /* ------------------------------------------------------------------ */
 
   function renderBreadcrumb() {
@@ -1118,7 +1519,7 @@
     }
 
     h.push('<div class="p-section"><p class="hint">Click: focus · Double-click: details · Drag: pan · Scroll: zoom · ' +
-      '<kbd>/</kbd> search · <kbd>H</kbd> home · <kbd>F</kbd> focus mode · <kbd>Alt</kbd>+←/→ history</p></div>');
+      '<kbd>/</kbd> search · <kbd>H</kbd> home · <kbd>F</kbd> focus mode · <kbd>C</kbd> controls · <kbd>Alt</kbd>+←/→ history</p></div>');
 
     el.panel.innerHTML = h.join('');
   }
@@ -1132,7 +1533,7 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* 11. Search                                                          */
+  /* 12. Search                                                          */
   /* ------------------------------------------------------------------ */
 
   function buildSearchIndex() {
@@ -1193,6 +1594,7 @@
 
   function selectSearchResult(id) {
     closeSearch();
+    stopTour();
     el.searchInput.value = '';
     el.searchInput.blur();
     setView('map');
@@ -1221,8 +1623,65 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* 12. Filters, settings, popovers, private mode                       */
+  /* 13. Controls panel, filters, settings, private mode                 */
   /* ------------------------------------------------------------------ */
+
+  function setControlsOpen(open, tab) {
+    state.prefs.controlsOpen = !!open;
+    el.controls.hidden = !open;
+    el.btnControlsOpen.hidden = !!open;
+    el.btnControlsOpen.setAttribute('aria-expanded', String(!!open));
+    $('view-map').classList.toggle('controls-on', !!open);
+    if (tab) setControlsTab(tab);
+    savePrefs();
+    measureMap();
+  }
+
+  function setControlsTab(tab) {
+    state.prefs.controlsTab = tab;
+    ['general', 'mappings', 'filter'].forEach((t) => {
+      const btn = $('ctab-' + t);
+      btn.setAttribute('aria-selected', String(t === tab));
+      btn.setAttribute('tabindex', t === tab ? '0' : '-1');
+      $('cpanel-' + t).hidden = t !== tab;
+    });
+    savePrefs();
+  }
+
+  /** Push every preference into its control. */
+  function syncControlsUi() {
+    const p = state.prefs;
+    el.ctlTheme.value = document.documentElement.getAttribute('data-theme') || 'dark';
+    el.ctlHighlightRoot.checked = p.highlightRoot;
+    el.ctlLayout.value = p.layout;
+    el.ctlDetail.value = p.layoutDetail;
+    el.ctlZoom.value = String(Math.round(state.zoom * 100));
+    el.ctlZoomOut.textContent = Math.round(state.zoom * 100) + '%';
+    el.ctlLabelMode.value = p.labelMode;
+    el.ctlLabelRadius.value = String(p.labelRadius);
+    el.ctlLabelRadiusOut.textContent = p.labelRadius.toFixed(2);
+    el.ctlShowRadius.checked = p.showRadius;
+    el.ctlLabelSize.value = String(p.labelSize);
+    el.ctlLabelSizeOut.textContent = p.labelSize + 'px';
+    el.ctlColorBy.value = p.colorBy;
+    el.ctlSizeBy.value = p.sizeBy;
+    el.ctlLeafSquares.checked = p.leafSquares;
+    el.ctlStatusStyle.checked = p.statusStyle;
+    el.ctlRings.checked = p.rings;
+    el.ctlLabels.checked = p.labels;
+    el.ctlLinks.value = p.links;
+    el.ctlFilterMode.value = p.filterMode;
+    el.btnFocus.setAttribute('aria-pressed', String(p.focusMode));
+    syncDepthControl();
+  }
+
+  function syncDepthControl() {
+    const max = state.model ? Math.max(1, state.model.maxDepth) : 4;
+    el.ctlDepth.max = String(max);
+    const v = state.prefs.maxDepth && state.prefs.maxDepth < max ? state.prefs.maxDepth : max;
+    el.ctlDepth.value = String(v);
+    el.ctlDepthOut.textContent = state.prefs.maxDepth && state.prefs.maxDepth < max ? String(v) : 'All';
+  }
 
   function buildFilterChips() {
     const s = state.publicData.settings;
@@ -1242,7 +1701,7 @@
 
   function updateFilterBadge() {
     const f = state.prefs.filters;
-    const count = f.categories.length + f.statuses.length + f.priorities.length;
+    const count = f.categories.length + f.statuses.length + f.priorities.length + (state.prefs.maxDepth ? 1 : 0);
     el.filterCount.textContent = String(count);
     el.filterCount.hidden = count === 0;
   }
@@ -1263,12 +1722,15 @@
     updateFilterBadge();
     savePrefs();
     updateNodeStates();
+    updateLinks();
     requestRender();
   }
 
   function clearFilters() {
     state.prefs.filters = { categories: [], statuses: [], priorities: [] };
+    state.prefs.maxDepth = 0;
     buildFilterChips();
+    syncDepthControl();
     applyFilterChange();
   }
 
@@ -1280,25 +1742,15 @@
   }
 
   function closePopovers(except) {
-    [[el.btnFilters, el.popFilters], [el.btnSettings, el.popSettings]].forEach((pair) => {
-      if (pair[1] !== except) {
-        pair[1].hidden = true;
-        pair[0].setAttribute('aria-expanded', 'false');
-      }
-    });
+    if (el.popSettings !== except) {
+      el.popSettings.hidden = true;
+      el.btnSettings.setAttribute('aria-expanded', 'false');
+    }
   }
 
   function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
-    el.setTheme.value = theme;
-  }
-
-  function syncSettingsUi() {
-    el.setLabels.checked = !!state.prefs.labels;
-    el.setLinks.value = state.prefs.links;
-    el.setRings.checked = !!state.prefs.rings;
-    el.setTheme.value = document.documentElement.getAttribute('data-theme') || 'dark';
-    el.btnFocus.setAttribute('aria-pressed', String(!!state.prefs.focusMode));
+    if (el.ctlTheme) el.ctlTheme.value = theme;
   }
 
   function updatePrivateUi() {
@@ -1335,7 +1787,7 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* 13. Views: timeline, balance, decision                              */
+  /* 14. Views: timeline, balance, decision                              */
   /* ------------------------------------------------------------------ */
 
   function setView(view) {
@@ -1349,6 +1801,7 @@
       tab.setAttribute('tabindex', active ? '0' : '-1');
       panel.hidden = !active;
     });
+    if (view !== 'map') stopTour();
     hideTooltip();
     renderActiveView();
     if (view === 'map') measureMap();
@@ -1587,56 +2040,149 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* 14. Layout measurement and rebuild                                  */
+  /* 15. Measurement and rebuild                                         */
   /* ------------------------------------------------------------------ */
 
+  /**
+   * Size the disk to the free area. On wide screens the open Controls
+   * panel reserves space on the right so it never covers the disk.
+   */
   function measureMap() {
     const rect = el.map.getBoundingClientRect();
-    state.size = { w: rect.width, h: rect.height };
-    state.baseR = Math.max(60, Math.min(rect.width, rect.height) / 2 - 28);
+    const reserve = (el.controls && !el.controls.hidden && window.innerWidth > 900) ? el.controls.offsetWidth + 24 : 0;
+    const availW = Math.max(200, rect.width - reserve);
+    state.size = { w: rect.width, h: rect.height, availW: availW, cx: availW / 2, cy: rect.height / 2 };
+    state.baseR = Math.max(60, Math.min(availW, rect.height) / 2 - 28);
     requestRender();
   }
 
   /** Rebuild model + layout + DOM (data or Private Mode changed). */
   function rebuild() {
+    stopTour();
     state.model = buildModel();
-    layoutTree(state.model.root);
+    if (!state.model.byId.has(state.focusId)) state.focusId = state.model.root.id;
+    computeLayout();
     buildSearchIndex();
     buildMapDom();
-    if (!state.model.byId.has(state.focusId)) state.focusId = state.model.root.id;
     state.hoverId = null;
     state.anim = null;
-    state.center = clampDisk(state.model.byId.get(state.focusId).pos.slice(), 0.9995);
+    state.morph = null;
+    const focus = state.model.byId.get(state.focusId);
+    state.M = state.prefs.layout === 'radial' ? mIdentity() : mTranslate(clampDisk(focus.pos, 0.9995));
+    syncDepthControl();
     onFocusChanged();
     renderActiveView();
     measureMap();
   }
 
   /* ------------------------------------------------------------------ */
-  /* 15. Wiring                                                          */
+  /* 16. Wiring                                                          */
   /* ------------------------------------------------------------------ */
 
   function cacheElements() {
     Object.assign(el, {
       map: $('map'), panel: $('panel'), breadcrumb: $('breadcrumb'), tooltip: $('tooltip'), toast: $('toast'),
+      legend: $('legend'),
       loader: $('loader'), loaderMessage: $('loader-message'), loaderActions: $('loader-actions'),
       btnPickPublic: $('btn-pick-public'), filePublic: $('file-public'), filePrivate: $('file-private'),
       searchInput: $('search-input'), searchResults: $('search-results'),
       btnBack: $('btn-back'), btnHome: $('btn-home'), btnForward: $('btn-forward'),
-      btnFocus: $('btn-focus'), btnFilters: $('btn-filters'), popFilters: $('pop-filters'), filterCount: $('filter-count'),
-      filterCategories: $('filter-categories'), filterStatuses: $('filter-statuses'), filterPriorities: $('filter-priorities'),
-      btnClearFilters: $('btn-clear-filters'), btnPrivate: $('btn-private'), privateBanner: $('private-banner'),
+      btnFocus: $('btn-focus'), btnFilters: $('btn-filters'), filterCount: $('filter-count'),
+      btnPrivate: $('btn-private'), privateBanner: $('private-banner'),
       btnSettings: $('btn-settings'), popSettings: $('pop-settings'),
-      setLabels: $('set-labels'), setLinks: $('set-links'), setRings: $('set-rings'), setTheme: $('set-theme'),
       privateStatus: $('private-status'), btnLoadPrivate: $('btn-load-private'), btnUnloadPrivate: $('btn-unload-private'),
       btnResetPrefs: $('btn-reset-prefs'), btnPanel: $('btn-panel'),
       btnZoomIn: $('btn-zoom-in'), btnZoomOut: $('btn-zoom-out'), btnZoomReset: $('btn-zoom-reset'),
-      viewTimeline: $('view-timeline'), viewBalance: $('view-balance'), viewDecision: $('view-decision')
+      viewTimeline: $('view-timeline'), viewBalance: $('view-balance'), viewDecision: $('view-decision'),
+      // Controls
+      controls: $('controls'), btnControlsOpen: $('btn-controls-open'), btnControlsClose: $('btn-controls-close'),
+      ctlStats: $('ctl-stats'), ctlReset: $('ctl-reset'), ctlTheme: $('ctl-theme'), ctlHighlightRoot: $('ctl-highlight-root'),
+      ctlJoystick: $('ctl-joystick'), ctlPlay: $('ctl-play'), ctlStop: $('ctl-stop'),
+      ctlLayout: $('ctl-layout'), ctlDetail: $('ctl-detail'), ctlZoom: $('ctl-zoom'), ctlZoomOut: $('ctl-zoom-out'),
+      ctlLabelMode: $('ctl-label-mode'), ctlLabelRadius: $('ctl-label-radius'), ctlLabelRadiusOut: $('ctl-label-radius-out'),
+      ctlShowRadius: $('ctl-show-radius'), ctlLabelSize: $('ctl-label-size'), ctlLabelSizeOut: $('ctl-label-size-out'),
+      ctlColorBy: $('ctl-color-by'), ctlColorKey: $('ctl-color-key'), ctlSizeBy: $('ctl-size-by'),
+      ctlLeafSquares: $('ctl-leaf-squares'), ctlStatusStyle: $('ctl-status-style'), ctlRings: $('ctl-rings'),
+      ctlLabels: $('ctl-labels'), ctlLinks: $('ctl-links'),
+      filterCategories: $('filter-categories'), filterStatuses: $('filter-statuses'), filterPriorities: $('filter-priorities'),
+      ctlDepth: $('ctl-depth'), ctlDepthOut: $('ctl-depth-out'), ctlFilterMode: $('ctl-filter-mode'),
+      btnClearFilters: $('btn-clear-filters')
     });
   }
 
   function isTyping(target) {
     return target && (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+  }
+
+  /** Small helper: bind a control to a pref and a reaction. */
+  function bindControl(input, event, read, apply) {
+    input.addEventListener(event, () => {
+      read(input);
+      savePrefs();
+      if (state.model) apply();
+    });
+  }
+
+  function wireControls() {
+    const p = () => state.prefs;
+    const redraw = () => requestRender();
+
+    el.btnControlsOpen.addEventListener('click', () => setControlsOpen(true));
+    el.btnControlsClose.addEventListener('click', () => setControlsOpen(false));
+    document.querySelectorAll('.ctl-tab').forEach((tab) => {
+      tab.addEventListener('click', () => setControlsTab(tab.getAttribute('data-ctab')));
+      tab.addEventListener('keydown', (e) => {
+        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+        const tabs = Array.from(document.querySelectorAll('.ctl-tab'));
+        const i = tabs.indexOf(tab);
+        const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+        next.focus();
+        setControlsTab(next.getAttribute('data-ctab'));
+      });
+    });
+
+    // General
+    el.ctlReset.addEventListener('click', resetView);
+    el.ctlTheme.addEventListener('change', () => { p().theme = el.ctlTheme.value; savePrefs(); applyTheme(el.ctlTheme.value); });
+    bindControl(el.ctlHighlightRoot, 'change', (i) => { p().highlightRoot = i.checked; }, () => { applyNodeStyles(); redraw(); });
+    el.ctlPlay.addEventListener('click', startTour);
+    el.ctlStop.addEventListener('click', stopTour);
+    bindControl(el.ctlLayout, 'change', (i) => { p().layout = i.value; }, () => relayout(true));
+    bindControl(el.ctlDetail, 'change', (i) => { p().layoutDetail = i.value; }, () => relayout(true));
+    el.ctlZoom.addEventListener('input', () => setZoom(Number(el.ctlZoom.value) / 100));
+    bindControl(el.ctlLabelMode, 'change', (i) => { p().labelMode = i.value; }, redraw);
+    bindControl(el.ctlLabelRadius, 'input', (i) => {
+      p().labelRadius = clamp(Number(i.value), 0.1, 0.98);
+      el.ctlLabelRadiusOut.textContent = p().labelRadius.toFixed(2);
+    }, redraw);
+    bindControl(el.ctlShowRadius, 'change', (i) => { p().showRadius = i.checked; }, redraw);
+    bindControl(el.ctlLabelSize, 'input', (i) => {
+      p().labelSize = clamp(Number(i.value), 7, 16);
+      el.ctlLabelSizeOut.textContent = p().labelSize + 'px';
+    }, redraw);
+
+    // Mappings
+    bindControl(el.ctlColorBy, 'change', (i) => { p().colorBy = i.value; }, () => { applyNodeStyles(); redraw(); });
+    bindControl(el.ctlSizeBy, 'change', (i) => { p().sizeBy = i.value; }, redraw);
+    bindControl(el.ctlLeafSquares, 'change', (i) => { p().leafSquares = i.checked; }, () => { renderLegend(); redraw(); });
+    bindControl(el.ctlStatusStyle, 'change', (i) => { p().statusStyle = i.checked; }, () => { applyNodeStyles(); redraw(); });
+    bindControl(el.ctlRings, 'change', (i) => { p().rings = i.checked; }, redraw);
+    bindControl(el.ctlLabels, 'change', (i) => { p().labels = i.checked; }, redraw);
+    bindControl(el.ctlLinks, 'change', (i) => { p().links = i.value; }, () => { updateLinks(); redraw(); });
+
+    // Filter
+    el.controls.addEventListener('click', onFilterClick);
+    el.btnClearFilters.addEventListener('click', clearFilters);
+    el.ctlDepth.addEventListener('input', () => {
+      const max = Number(el.ctlDepth.max);
+      const v = Number(el.ctlDepth.value);
+      p().maxDepth = v >= max ? 0 : v;
+      el.ctlDepthOut.textContent = p().maxDepth ? String(v) : 'All';
+      applyFilterChange();
+    });
+    bindControl(el.ctlFilterMode, 'change', (i) => { p().filterMode = i.value; }, applyFilterChange);
+
+    wireJoystick();
   }
 
   function wireEvents() {
@@ -1657,6 +2203,7 @@
       const target = e.target.closest ? e.target.closest('[data-goto]') : null;
       if (!target || target.closest('#map')) return;
       const id = target.getAttribute('data-goto');
+      stopTour();
       if (target.closest('#search-results')) { selectSearchResult(id); return; }
       if (target.closest('.view-scroll')) { goToNodeFromView(id); return; }
       if (state.prefs.view !== 'map') setView('map');
@@ -1669,10 +2216,7 @@
     el.btnHome.addEventListener('click', goHome);
     el.btnZoomIn.addEventListener('click', () => setZoom(state.zoom * 1.25));
     el.btnZoomOut.addEventListener('click', () => setZoom(state.zoom / 1.25));
-    el.btnZoomReset.addEventListener('click', () => {
-      state.zoom = 1;
-      animateCenterTo(state.model.byId.get(state.focusId).pos, ANIM_MS);
-    });
+    el.btnZoomReset.addEventListener('click', resetView);
     el.btnPanel.addEventListener('click', () => setPanelOpen(document.body.classList.contains('panel-closed')));
 
     // Tabs (click + arrow keys).
@@ -1694,10 +2238,11 @@
     el.searchInput.addEventListener('focus', () => { if (el.searchInput.value) runSearch(el.searchInput.value); });
     el.searchResults.addEventListener('mousedown', (e) => e.preventDefault()); // keep input focus until click completes
 
-    // Filters.
-    el.btnFilters.addEventListener('click', (e) => { e.stopPropagation(); togglePopover(el.btnFilters, el.popFilters); });
-    el.popFilters.addEventListener('click', onFilterClick);
-    el.btnClearFilters.addEventListener('click', clearFilters);
+    // Filters button opens Controls › Filter.
+    el.btnFilters.addEventListener('click', () => {
+      if (state.prefs.view !== 'map') setView('map');
+      setControlsOpen(true, 'filter');
+    });
 
     // Focus mode.
     el.btnFocus.addEventListener('click', () => {
@@ -1733,27 +2278,27 @@
       toast('Private data unloaded.');
     });
 
-    // Settings.
+    // Settings popover.
     el.btnSettings.addEventListener('click', (e) => { e.stopPropagation(); togglePopover(el.btnSettings, el.popSettings); });
-    el.setLabels.addEventListener('change', () => { state.prefs.labels = el.setLabels.checked; savePrefs(); requestRender(); });
-    el.setRings.addEventListener('change', () => { state.prefs.rings = el.setRings.checked; savePrefs(); requestRender(); });
-    el.setLinks.addEventListener('change', () => { state.prefs.links = el.setLinks.value; savePrefs(); updateLinks(); requestRender(); });
-    el.setTheme.addEventListener('change', () => { state.prefs.theme = el.setTheme.value; savePrefs(); applyTheme(el.setTheme.value); });
     el.btnResetPrefs.addEventListener('click', () => {
       storageRemove(PREFS_KEY);
       state.prefs = loadPrefs();
       state.prefs.panelOpen = window.innerWidth > 900;
+      state.prefs.controlsOpen = window.innerWidth > 900;
       applyTheme((window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark');
-      syncSettingsUi();
+      setZoom(1);
       buildFilterChips();
+      syncControlsUi();
       setPanelOpen(state.prefs.panelOpen);
+      setControlsOpen(state.prefs.controlsOpen, 'general');
+      applyNodeStyles();
       updateNodeStates();
       updateLinks();
-      requestRender();
+      relayout(true);
       toast('View settings reset.');
     });
 
-    // Close popovers on outside click.
+    // Close popovers / search on outside click.
     document.addEventListener('click', (e) => {
       if (!e.target.closest || !e.target.closest('.popover-wrap')) closePopovers(null);
       if (!e.target.closest || !e.target.closest('.search')) closeSearch();
@@ -1782,7 +2327,7 @@
 
     // Global keyboard shortcuts.
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') { closePopovers(null); closeSearch(); hideTooltip(); return; }
+      if (e.key === 'Escape') { closePopovers(null); closeSearch(); hideTooltip(); stopTour(); return; }
       if (isTyping(e.target) || e.ctrlKey || e.metaKey) return;
       if (!state.model) return;
       if (e.altKey && e.key === 'ArrowLeft') { e.preventDefault(); goBack(); return; }
@@ -1793,9 +2338,10 @@
         case 'h': case 'H': goHome(); break;
         case 'f': case 'F': el.btnFocus.click(); break;
         case 'p': case 'P': togglePrivateMode(); break;
+        case 'c': case 'C': setControlsOpen(el.controls.hidden); break;
         case '+': case '=': setZoom(state.zoom * 1.25); break;
         case '-': case '_': setZoom(state.zoom / 1.25); break;
-        case '0': el.btnZoomReset.click(); break;
+        case '0': resetView(); break;
         default: break;
       }
     });
@@ -1816,6 +2362,8 @@
         showLoader('Could not use that file: ' + err.message, true);
       }
     });
+
+    wireControls();
   }
 
   /** Start the app once public data is available. */
@@ -1824,11 +2372,12 @@
     hideLoader();
     document.title = (data.meta.title || 'Life OS') + ' — ' + (data.meta.subtitle || 'Hyperbolic Life Map');
     buildFilterChips();
-    syncSettingsUi();
     updatePrivateUi();
     state.focusId = state.prefs.lastFocus || 'self';
     rebuild();
+    syncControlsUi();
     setPanelOpen(state.prefs.panelOpen);
+    setControlsOpen(state.prefs.controlsOpen, state.prefs.controlsTab);
     setView(state.prefs.view);
   }
 
@@ -1836,6 +2385,7 @@
     cacheElements();
     state.prefs = loadPrefs();
     if (state.prefs.panelOpen === null) state.prefs.panelOpen = window.innerWidth > 900;
+    if (state.prefs.controlsOpen === null) state.prefs.controlsOpen = window.innerWidth > 900;
     if (state.prefs.theme === 'light' || state.prefs.theme === 'dark') applyTheme(state.prefs.theme);
     wireEvents();
 

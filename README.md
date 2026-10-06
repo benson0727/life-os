@@ -1,6 +1,6 @@
 # BENSON LIFE OS — Hyperbolic Life Map
 
-**v1.0.0** · Static web app · No build step · No backend · No runtime dependencies
+**v1.1.0** · Static web app · No build step · No backend · No runtime dependencies
 
 A personal **Life Digital Twin**: one interactive map of work, future, finance, family, mindset,
 learning, research, health, network, growth, life management and inner development — with
@@ -21,19 +21,61 @@ the center; everything else stays visible toward the edge, so you never lose the
 
 ---
 
-## Features (v1.0)
+## Features
 
 - **Hyperbolic map** — click to focus (animated along the hyperbolic geodesic), drag to pan, wheel / pinch to zoom
 - **Details panel** — description, why it matters, status, priority, progress, target, next action, importance / attention, notes, related nodes
 - **Reflection prompts** on Mindset, Growth and Inner nodes
 - **Cross-links** — shown for the selected node, on hover, or all (Settings)
 - **Search** (`/`), **breadcrumb**, **Home** (`H`), **Back / Forward** (`Alt` + `←` / `→`)
-- **Filters** by category, status, priority (non-matching nodes are dimmed, not removed)
+- **Controls panel** (`C`) — General / Mappings / Filter, see below
+- **Filters** by category, status, priority and depth — dim or hide non-matching nodes
 - **Focus mode** (`F`) — dims everything outside the selected node's neighborhood
 - **Views** — Timeline, Life Balance (importance vs attention), Decision Mode (trade-off matrix, no automatic answer)
 - **Private Mode** (`P`) — private branch, private nodes, private notes and metrics; off by default on every page load
 - **Dark / Light theme**, labels, progress rings — saved in `localStorage`
 - Keyboard accessible: `Tab` moves through the focused node's neighborhood, `Enter` focuses, `Shift` + `Enter` opens details
+
+---
+
+## Controls panel
+
+Open with the **Controls** button on the map or the `C` key. All settings are saved in `localStorage`.
+The control names follow the hyperbolic-tree viewer style; the behavior is this project's own implementation.
+
+### General
+
+| Control | What it does |
+|---|---|
+| Reset view | Zoom 100 %, focused node centered, rotation removed |
+| Theme | ☀ Light / ☾ Dark |
+| highlight root node | SELF drawn in gold and kept large |
+| Pan › Interactive | Hold and drag the knob: the map glides in that direction. Arrow keys work when the joystick has keyboard focus |
+| Pan › Animation | ▶ Play tours SELF's branches one by one (2.6 s each), then SELF, and loops. ■ Stop ends it. Any click or drag also stops it |
+| Layout - general | **anchored** — "up" stays up while you navigate. **geodesic** — true hyperbolic travel: the view keeps the rotation picked up along the way. **radial** — the tree is re-rooted at the focused node: parent at 12 o'clock, children around it |
+| Layout - detail | **kinship** — siblings share space by subtree size. **distance** — equal space per sibling, longer edges in crowded families |
+| Zoom | 60–400 % |
+| Label placement | **Collision aware** — skip labels that would overlap. **Radius fade** — no overlap check; labels fade toward the radius limit |
+| Radius for labels shown | Labels appear only inside this fraction of the disk radius |
+| show radius | Draws that radius as a dashed circle |
+| Label font size | Base label size |
+
+### Mappings
+
+| Control | What it does |
+|---|---|
+| Color by | Category · Status · Priority · Depth (with a color key) |
+| Size by | Depth · Importance · Progress · Subtree size |
+| squares = leaves | Leaf nodes as squares, branches as circles |
+| status fill | Hollow = idea / exploring / planning, faded = waiting / paused |
+| progress rings | Arc around nodes that have `progress` |
+| labels | Show / hide labels (focus, root and hover always shown) |
+| Related links | Hover only · Selected node · All |
+
+### Filter
+
+Category, status and priority chips; **Max depth**; and **Dim** or **Hide** for non-matching nodes.
+Hide keeps the parents of matching nodes so the tree stays connected. The header shows `shown / total nodes · render time`.
 
 ---
 
@@ -253,7 +295,9 @@ the data as exposed.
 3. **Animation** — on click, *c* moves along the hyperbolic geodesic toward the target node at
    uniform hyperbolic speed (eased).
 4. **Edges** — drawn as geodesics (arcs orthogonal to the disk boundary).
-5. **Labels** — placed greedily by importance; overlapping labels are hidden.
+5. **View transform** — kept as a 2×2 complex matrix so translations compose exactly.
+   *anchored* removes the rotation after every move; *geodesic* keeps it.
+6. **Labels** — placed greedily by importance; overlapping labels are hidden (or faded by radius).
 
 Written from scratch in plain JavaScript and SVG, inspired by the hyperbolic tree / Poincaré disk interaction style.
 
